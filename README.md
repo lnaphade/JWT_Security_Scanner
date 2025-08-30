@@ -145,6 +145,16 @@ Your Name
 - GitHub: https://github.com/lnaphade/jwt_tool
 - Email: lnaphade@gmail.com
 
+## 📄 License
+This project is distributed under the Educational Use License (EUL) located in the `LICENSE` file.
+
+Permitted: non-commercial educational instruction, academic research, personal learning.
+Prohibited without permission: any commercial or monetized use (including SaaS, paid services, bundled distributions).
+
+For commercial licensing inquiries, contact: licensing@example.com
+
+If you require an OSI-approved open source license instead, you can fork and re-license under a permissive license (MIT / Apache-2.0 / BSD-3-Clause) subject to removing the EUL text and adding your own notice.
+
 ## 🙏 Acknowledgments
 Thanks to the security research community and library maintainers.
 
