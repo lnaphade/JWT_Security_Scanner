@@ -1,8 +1,19 @@
-# JWT Tool: Advanced JWT Security Testing Suite
+# 🇮🇳 JWT Security Analyzer - India Pride Edition
 
-![jwt_tool version](https://img.shields.io/badge/version-v2.0.0-blue) ![python version](https://img.shields.io/badge/python-v3.8+-green) ![GUI Support](https://img.shields.io/badge/GUI-enabled-brightgreen)
+<div align="center">
 
-**Version 2.0.0 (01 August 2025)**
+![India Flag](https://img.shields.io/badge/Made%20with-❤️%20from%20India-orange?style=for-the-badge&logo=data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjQiIGhlaWdodD0iMTYiIHZpZXdCb3g9IjAgMCAyNCAxNiIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KPHJlY3Qgd2lkdGg9IjI0IiBoZWlnaHQ9IjUuMzMiIGZpbGw9IiNGRjk5MzMiLz4KPHJlY3QgeT0iNS4zMyIgd2lkdGg9IjI0IiBoZWlnaHQ9IjUuMzMiIGZpbGw9IndoaXRlIi8+CjxyZWN0IHk9IjEwLjY3IiB3aWR0aD0iMjQiIGhlaWdodD0iNS4zMyIgZmlsbD0iIzEzODgwOCIvPgo8L3N2Zz4K)
+![Python](https://img.shields.io/badge/Python-3.7+-blue?style=for-the-badge&logo=python)
+![License](https://img.shields.io/badge/License-Dual%20License-green?style=for-the-badge)
+![Security](https://img.shields.io/badge/Security-Enterprise%20Grade-red?style=for-the-badge&logo=shield)
+
+**Advanced JWT Security Analysis Tool with Beautiful India-Themed Reports**
+
+*Contributing to Global Cybersecurity Excellence from भारत (India)*
+
+**Version 2.0.0-india-pride (30 August 2025)**
+
+</div>
 
 A comprehensive, streamlined JWT (JSON Web Token) security testing toolkit with both CLI and GUI interfaces. This tool provides complete JWT analysis, manipulation, and vulnerability testing capabilities in a clean, efficient codebase.
 
