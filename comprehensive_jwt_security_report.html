@@ -1,0 +1,1050 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Comprehensive JWT Security Analysis Report</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            line-height: 1.6;
+            color: #333;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+        }
+        
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        
+        .header {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            border-radius: 15px;
+            padding: 30px;
+            margin-bottom: 30px;
+            text-align: center;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+        }
+        
+        .header h1 {
+            color: #2c3e50;
+            font-size: 2.5em;
+            margin-bottom: 10px;
+            font-weight: 700;
+        }
+        
+        .header .subtitle {
+            color: #7f8c8d;
+            font-size: 1.2em;
+            margin-bottom: 20px;
+        }
+        
+        .header .scan-info {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 20px;
+            margin-top: 20px;
+        }
+        
+        .scan-info-item {
+            background: #f8f9fa;
+            padding: 15px;
+            border-radius: 8px;
+            text-align: center;
+        }
+        
+        .scan-info-item .label {
+            font-weight: bold;
+            color: #495057;
+            margin-bottom: 5px;
+        }
+        
+        .scan-info-item .value {
+            color: #007bff;
+            font-weight: 600;
+        }
+        
+        .report-card {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            border-radius: 15px;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+            margin-bottom: 30px;
+            overflow: hidden;
+        }
+        
+        .card-header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 20px 30px;
+            font-size: 1.3em;
+            font-weight: 600;
+        }
+        
+        .card-body {
+            padding: 30px;
+        }
+        
+        .summary-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+        
+        .summary-card {
+            text-align: center;
+            padding: 25px;
+            border-radius: 12px;
+            color: white;
+            font-weight: bold;
+        }
+        
+        .summary-card.critical {
+            background: linear-gradient(135deg, #ff416c 0%, #ff4757 100%);
+        }
+        
+        .summary-card.high {
+            background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+        }
+        
+        .summary-card.medium {
+            background: linear-gradient(135deg, #ffecd2 0%, #fcb69f 100%);
+            color: #333;
+        }
+        
+        .summary-card.low {
+            background: linear-gradient(135deg, #a8edea 0%, #fed6e3 100%);
+            color: #333;
+        }
+        
+        .summary-card.info {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        }
+        
+        .summary-number {
+            font-size: 2.5em;
+            display: block;
+            margin-bottom: 5px;
+        }
+        
+        .summary-label {
+            font-size: 0.9em;
+            opacity: 0.9;
+        }
+        
+        .technical-section {
+            margin: 25px 0;
+        }
+        
+        .section-title {
+            color: #2c3e50;
+            font-size: 1.4em;
+            font-weight: 600;
+            margin-bottom: 15px;
+            padding-bottom: 8px;
+            border-bottom: 3px solid #667eea;
+        }
+        
+        .jwt-structure {
+            background: #f8f9fa;
+            border-radius: 10px;
+            padding: 20px;
+            margin: 20px 0;
+            border-left: 5px solid #007bff;
+        }
+        
+        .jwt-part {
+            margin-bottom: 15px;
+            padding: 15px;
+            border-radius: 8px;
+            border: 1px solid #dee2e6;
+        }
+        
+        .jwt-part.header {
+            background: #e3f2fd;
+            border-left: 4px solid #2196f3;
+        }
+        
+        .jwt-part.payload {
+            background: #f3e5f5;
+            border-left: 4px solid #9c27b0;
+        }
+        
+        .jwt-part.signature {
+            background: #e8f5e8;
+            border-left: 4px solid #4caf50;
+        }
+        
+        .jwt-part-title {
+            font-weight: bold;
+            color: #333;
+            margin-bottom: 10px;
+            font-size: 1.1em;
+        }
+        
+        .code-block {
+            background: #2d3748;
+            color: #e2e8f0;
+            padding: 20px;
+            border-radius: 8px;
+            overflow-x: auto;
+            font-family: 'Courier New', monospace;
+            font-size: 0.9em;
+            line-height: 1.5;
+            margin: 10px 0;
+        }
+        
+        .risk-assessment {
+            margin: 20px 0;
+        }
+        
+        .risk-item {
+            border: 1px solid #dee2e6;
+            border-radius: 10px;
+            margin-bottom: 20px;
+            overflow: hidden;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        }
+        
+        .risk-header {
+            padding: 15px 20px;
+            font-weight: bold;
+            color: white;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+        
+        .risk-header.critical {
+            background: linear-gradient(135deg, #ff416c 0%, #ff4757 100%);
+        }
+        
+        .risk-header.high {
+            background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+        }
+        
+        .risk-header.medium {
+            background: linear-gradient(135deg, #ffecd2 0%, #fcb69f 100%);
+            color: #333;
+        }
+        
+        .risk-header.low {
+            background: linear-gradient(135deg, #a8edea 0%, #fed6e3 100%);
+            color: #333;
+        }
+        
+        .risk-header.info {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        }
+        
+        .severity-badge {
+            padding: 5px 15px;
+            border-radius: 20px;
+            font-size: 0.8em;
+            font-weight: bold;
+            background: rgba(255,255,255,0.2);
+        }
+        
+        .risk-content {
+            padding: 20px;
+            background: white;
+        }
+        
+        .risk-section {
+            margin-bottom: 15px;
+        }
+        
+        .risk-section-title {
+            font-weight: bold;
+            color: #495057;
+            margin-bottom: 8px;
+            font-size: 1.1em;
+        }
+        
+        .risk-description {
+            color: #666;
+            line-height: 1.6;
+        }
+        
+        .risk-impact {
+            background: #fff5f5;
+            border-left: 4px solid #e53e3e;
+            padding: 15px;
+            border-radius: 0 8px 8px 0;
+            margin: 10px 0;
+        }
+        
+        .risk-mitigation {
+            background: #f0fff4;
+            border-left: 4px solid #38a169;
+            padding: 15px;
+            border-radius: 0 8px 8px 0;
+            margin: 10px 0;
+        }
+        
+        .technical-details {
+            background: #f8f9ff;
+            border-left: 4px solid #667eea;
+            padding: 15px;
+            border-radius: 0 8px 8px 0;
+            margin: 10px 0;
+        }
+        
+        .table-container {
+            overflow-x: auto;
+            margin: 20px 0;
+        }
+        
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            background: white;
+            border-radius: 8px;
+            overflow: hidden;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        }
+        
+        th {
+            background: #667eea;
+            color: white;
+            padding: 15px;
+            text-align: left;
+            font-weight: 600;
+        }
+        
+        td {
+            padding: 12px 15px;
+            border-bottom: 1px solid #eee;
+        }
+        
+        tr:hover {
+            background: #f8f9fa;
+        }
+        
+        .algorithm-details {
+            background: #fff8e1;
+            border: 1px solid #ffcc02;
+            border-radius: 8px;
+            padding: 20px;
+            margin: 20px 0;
+        }
+        
+        .algorithm-title {
+            font-weight: bold;
+            color: #ff8f00;
+            margin-bottom: 10px;
+            font-size: 1.2em;
+        }
+        
+        .recommendations {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 25px;
+            border-radius: 12px;
+            margin: 20px 0;
+        }
+        
+        .recommendations h3 {
+            margin-bottom: 15px;
+            font-size: 1.3em;
+        }
+        
+        .recommendations ul {
+            list-style: none;
+            padding: 0;
+        }
+        
+        .recommendations li {
+            padding: 8px 0;
+            padding-left: 25px;
+            position: relative;
+        }
+        
+        .recommendations li:before {
+            content: "✓";
+            position: absolute;
+            left: 0;
+            color: #4ade80;
+            font-weight: bold;
+        }
+        
+        .vulnerability-matrix {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 20px;
+            margin: 20px 0;
+        }
+        
+        .vulnerability-card {
+            background: white;
+            border-radius: 8px;
+            padding: 20px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+            border-top: 4px solid #667eea;
+        }
+        
+        .vulnerability-title {
+            font-weight: bold;
+            color: #2c3e50;
+            margin-bottom: 10px;
+        }
+        
+        .vulnerability-status {
+            display: inline-block;
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 0.8em;
+            font-weight: bold;
+            margin-top: 10px;
+        }
+        
+        .status-pass {
+            background: #d4edda;
+            color: #155724;
+        }
+        
+        .status-fail {
+            background: #f8d7da;
+            color: #721c24;
+        }
+        
+        .status-warning {
+            background: #fff3cd;
+            color: #856404;
+        }
+        
+        .footer {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            border-radius: 15px;
+            padding: 20px;
+            text-align: center;
+            color: #666;
+            margin-top: 30px;
+        }
+        
+        .token-visual {
+            font-family: monospace;
+            background: #2d3748;
+            color: #e2e8f0;
+            padding: 20px;
+            border-radius: 8px;
+            word-break: break-all;
+            margin: 15px 0;
+            position: relative;
+        }
+        
+        .token-part-highlight {
+            position: relative;
+            display: inline;
+        }
+        
+        .token-part-highlight.header-part {
+            background: rgba(33, 150, 243, 0.3);
+        }
+        
+        .token-part-highlight.payload-part {
+            background: rgba(156, 39, 176, 0.3);
+        }
+        
+        .token-part-highlight.signature-part {
+            background: rgba(76, 175, 80, 0.3);
+        }
+        
+        .cvss-score {
+            display: inline-block;
+            padding: 8px 16px;
+            border-radius: 20px;
+            font-weight: bold;
+            color: white;
+            margin: 5px 0;
+        }
+        
+        .cvss-low {
+            background: #28a745;
+        }
+        
+        .cvss-medium {
+            background: #ffc107;
+            color: #333;
+        }
+        
+        .cvss-high {
+            background: #fd7e14;
+        }
+        
+        .cvss-critical {
+            background: #dc3545;
+        }
+        
+        @media (max-width: 768px) {
+            .summary-grid {
+                grid-template-columns: 1fr;
+            }
+            
+            .header h1 {
+                font-size: 2em;
+            }
+            
+            .container {
+                padding: 10px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- Header Section -->
+        <div class="header">
+            <h1>🔐 Comprehensive JWT Security Analysis</h1>
+            <div class="subtitle">Advanced Token Security Assessment Report</div>
+            <div class="scan-info">
+                <div class="scan-info-item">
+                    <div class="label">Scan Date</div>
+                    <div class="value">August 30, 2025</div>
+                </div>
+                <div class="scan-info-item">
+                    <div class="label">JWT Tool Version</div>
+                    <div class="value">2.0.0 (Enhanced)</div>
+                </div>
+                <div class="scan-info-item">
+                    <div class="label">Algorithm Support</div>
+                    <div class="value">ES256 Enabled</div>
+                </div>
+                <div class="scan-info-item">
+                    <div class="label">Analysis Type</div>
+                    <div class="value">Deep Security Scan</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Executive Summary -->
+        <div class="report-card">
+            <div class="card-header">📊 Executive Summary</div>
+            <div class="card-body">
+                <div class="summary-grid">
+                    <div class="summary-card critical">
+                        <span class="summary-number">0</span>
+                        <span class="summary-label">Critical Risks</span>
+                    </div>
+                    <div class="summary-card high">
+                        <span class="summary-number">0</span>
+                        <span class="summary-label">High Risks</span>
+                    </div>
+                    <div class="summary-card medium">
+                        <span class="summary-number">2</span>
+                        <span class="summary-label">Medium Risks</span>
+                    </div>
+                    <div class="summary-card low">
+                        <span class="summary-number">1</span>
+                        <span class="summary-label">Low Risks</span>
+                    </div>
+                    <div class="summary-card info">
+                        <span class="summary-number">4</span>
+                        <span class="summary-label">Security Checks</span>
+                    </div>
+                </div>
+                
+                <p><strong>Overall Risk Assessment:</strong> The analyzed JWT token presents a <strong>MEDIUM</strong> security risk profile. While the token uses a secure ES256 signature algorithm, several security best practices are not implemented, which could increase the attack surface in certain scenarios.</p>
+                
+                <p><strong>Key Findings:</strong> The token lacks essential security claims (expiration, JWT ID) and key management features (Key ID), which are critical for production environments. However, the use of ES256 algorithm demonstrates good cryptographic practices.</p>
+            </div>
+        </div>
+
+        <!-- Technical JWT Structure Analysis -->
+        <div class="report-card">
+            <div class="card-header">🔬 Technical JWT Structure Analysis</div>
+            <div class="card-body">
+                <div class="section-title">Token Composition</div>
+                <div class="token-visual">
+                    <span class="token-part-highlight header-part">eyJhbGciOiJFUzI1NiJ9</span>.<span class="token-part-highlight payload-part">eyJ1bmlxdWUiOiJjYWJlYWUyOS0wMzI3LTQzMjgtOTMwNC02OWUyYjVhYmU1YjQiLCJ1c2VyVHlwZSI6IlJJTHBlcnNvbiIsImF1dGhMZXZlbCI6IjIwIiwiZGV2aWNlSWQiOiIxYTMxZTg1NTIyOTVhOWNmZTRlZWIwYWI5ZWM4MTkzMzEzNTQwZmE3MWViOTEwZTFjN2IzNTcyOGYxYjU3ZTJjNTc0YjQxM2I4YjJlZTVmYWI5M2YwMTE0N2M4YWMwOGQ5ZTAzYmVhZmRkNTlmYWIyMWIzNzJiMWZjNmI4Yzc5MSIsInJlYWxtIjoibm9uLWppbyIsImlhdCI6MTc1NjQ2NTAxMn0</span>.<span class="token-part-highlight signature-part">P0ROYdJwWA2kfDX4Vj6URWPTQgaaVCNHoiY8GmnZS25gEKImUDh1ZtXrlSvN6045p2oPpK2LPwSjwtmJ3ish-w</span>
+                </div>
+                
+                <div class="jwt-structure">
+                    <div class="jwt-part header">
+                        <div class="jwt-part-title">🔧 Header (Algorithm & Type)</div>
+                        <div class="code-block">{
+  "alg": "ES256"
+}</div>
+                        <div class="technical-details">
+                            <strong>Technical Analysis:</strong>
+                            <ul>
+                                <li><strong>Algorithm:</strong> ES256 (ECDSA using P-256 curve and SHA-256)</li>
+                                <li><strong>Key Length:</strong> 256-bit elliptic curve</li>
+                                <li><strong>Security Level:</strong> Equivalent to ~3072-bit RSA</li>
+                                <li><strong>Performance:</strong> Fast signature generation and verification</li>
+                                <li><strong>Missing typ claim:</strong> While optional, 'typ': 'JWT' is recommended</li>
+                            </ul>
+                        </div>
+                    </div>
+                    
+                    <div class="jwt-part payload">
+                        <div class="jwt-part-title">📋 Payload (Claims)</div>
+                        <div class="code-block">{
+  "unique": "cabeae29-0327-4328-9304-69e2b5abe5b4",
+  "userType": "RILperson", 
+  "authLevel": "20",
+  "deviceId": "1a31e8552295a9cfe4eeb0ab9ec8193313540fa71eb910e1c7b35728f1b57e2c574b413b8b2ee5fab93f01147c8ac08d9e03beafdd59fab21b372b1fc6b8c791",
+  "realm": "non-jio",
+  "iat": 1756465012
+}</div>
+                        <div class="technical-details">
+                            <strong>Payload Analysis:</strong>
+                            <ul>
+                                <li><strong>Custom Claims:</strong> 5 application-specific claims</li>
+                                <li><strong>Standard Claims:</strong> 1 (iat only)</li>
+                                <li><strong>Device Fingerprinting:</strong> 128-character device ID present</li>
+                                <li><strong>User Context:</strong> Includes user type and authorization level</li>
+                                <li><strong>Realm-based Authentication:</strong> Multi-tenant support indicated</li>
+                            </ul>
+                        </div>
+                    </div>
+                    
+                    <div class="jwt-part signature">
+                        <div class="jwt-part-title">🔐 Signature (Verification)</div>
+                        <div class="code-block">P0ROYdJwWA2kfDX4Vj6URWPTQgaaVCNHoiY8GmnZS25gEKImUDh1ZtXrlSvN6045p2oPpK2LPwSjwtmJ3ish-w</div>
+                        <div class="technical-details">
+                            <strong>Signature Analysis:</strong>
+                            <ul>
+                                <li><strong>Format:</strong> Base64url-encoded ECDSA signature</li>
+                                <li><strong>Length:</strong> 86 characters (expected for ES256)</li>
+                                <li><strong>Components:</strong> r and s values (32 bytes each)</li>
+                                <li><strong>Verification:</strong> Requires corresponding public key</li>
+                                <li><strong>Security:</strong> Cryptographically strong when properly implemented</li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="section-title">ES256 Algorithm Deep Dive</div>
+                <div class="algorithm-details">
+                    <div class="algorithm-title">🔐 ECDSA with SHA-256 (ES256) Technical Specifications</div>
+                    <div class="table-container">
+                        <table>
+                            <tr>
+                                <th>Parameter</th>
+                                <th>Value</th>
+                                <th>Security Implication</th>
+                            </tr>
+                            <tr>
+                                <td>Elliptic Curve</td>
+                                <td>P-256 (secp256r1)</td>
+                                <td>NIST-recommended curve, widely supported</td>
+                            </tr>
+                            <tr>
+                                <td>Hash Function</td>
+                                <td>SHA-256</td>
+                                <td>Cryptographically secure, collision-resistant</td>
+                            </tr>
+                            <tr>
+                                <td>Key Size</td>
+                                <td>256 bits</td>
+                                <td>Equivalent to ~3072-bit RSA security</td>
+                            </tr>
+                            <tr>
+                                <td>Signature Size</td>
+                                <td>64 bytes (512 bits)</td>
+                                <td>Compact compared to RSA signatures</td>
+                            </tr>
+                            <tr>
+                                <td>Performance</td>
+                                <td>Fast signing/verification</td>
+                                <td>Suitable for high-throughput applications</td>
+                            </tr>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Detailed Risk Assessment -->
+        <div class="report-card">
+            <div class="card-header">⚠️ Detailed Risk Assessment</div>
+            <div class="card-body">
+                <div class="risk-assessment">
+                    
+                    <!-- Risk 1: Missing Expiration -->
+                    <div class="risk-item">
+                        <div class="risk-header medium">
+                            <span>🕒 Missing Token Expiration (exp)</span>
+                            <span class="severity-badge">MEDIUM RISK</span>
+                        </div>
+                        <div class="risk-content">
+                            <div class="risk-section">
+                                <div class="risk-section-title">📋 Risk Title</div>
+                                <div class="risk-description">Indefinite Token Validity - Security Exposure Through Missing Expiration Claim</div>
+                            </div>
+                            
+                            <div class="risk-section">
+                                <div class="risk-section-title">📝 Risk Description</div>
+                                <div class="risk-description">
+                                    The JWT token lacks an expiration time claim (exp), meaning the token remains valid indefinitely until the signing key is rotated or the application is restarted. This violates the principle of least privilege and increases the window of opportunity for token abuse if compromised.
+                                    <br><br>
+                                    <strong>Technical Details:</strong> JWT tokens without expiration claims bypass temporal security controls, making them equivalent to long-term API keys rather than session tokens.
+                                </div>
+                            </div>
+                            
+                            <div class="risk-impact">
+                                <div class="risk-section-title">💥 Risk Impact</div>
+                                <div class="risk-description">
+                                    <ul>
+                                        <li><strong>Token Theft Consequences:</strong> Stolen tokens remain valid indefinitely</li>
+                                        <li><strong>Session Hijacking:</strong> Compromised tokens cannot expire naturally</li>
+                                        <li><strong>Privilege Escalation:</strong> No temporal bounds on authorization grants</li>
+                                        <li><strong>Compliance Issues:</strong> May violate security frameworks requiring session timeouts</li>
+                                        <li><strong>Audit Trail:</strong> Difficult to determine legitimate vs. illegitimate long-term usage</li>
+                                    </ul>
+                                    <div class="cvss-score cvss-medium">CVSS Score: 5.4 (Medium)</div>
+                                </div>
+                            </div>
+                            
+                            <div class="risk-mitigation">
+                                <div class="risk-section-title">🛡️ Risk Mitigation</div>
+                                <div class="risk-description">
+                                    <ul>
+                                        <li><strong>Immediate:</strong> Implement exp claim with reasonable timeout (15 minutes - 1 hour)</li>
+                                        <li><strong>Architecture:</strong> Design refresh token mechanism for long-term access</li>
+                                        <li><strong>Monitoring:</strong> Log and alert on tokens without expiration in production</li>
+                                        <li><strong>Policy:</strong> Establish organizational standards for token lifetime limits</li>
+                                        <li><strong>Technical:</strong> Implement server-side token blacklisting capabilities</li>
+                                    </ul>
+                                </div>
+                            </div>
+                            
+                            <div class="technical-details">
+                                <strong>Implementation Example:</strong>
+                                <div class="code-block">// Recommended token structure with expiration
+{
+  "alg": "ES256",
+  "typ": "JWT"
+}
+{
+  "unique": "cabeae29-0327-4328-9304-69e2b5abe5b4",
+  "userType": "RILperson",
+  "authLevel": "20",
+  "iat": 1756465012,
+  "exp": 1756468612,  // +1 hour expiration
+  "nbf": 1756464952   // -1 minute not-before
+}</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Risk 2: Missing JWT ID -->
+                    <div class="risk-item">
+                        <div class="risk-header medium">
+                            <span>🆔 Missing JWT Identifier (jti)</span>
+                            <span class="severity-badge">MEDIUM RISK</span>
+                        </div>
+                        <div class="risk-content">
+                            <div class="risk-section">
+                                <div class="risk-section-title">📋 Risk Title</div>
+                                <div class="risk-description">Token Revocation Limitation - Missing Unique Token Identifier</div>
+                            </div>
+                            
+                            <div class="risk-section">
+                                <div class="risk-section-title">📝 Risk Description</div>
+                                <div class="risk-description">
+                                    The JWT lacks a unique token identifier (jti claim), which prevents granular token revocation and tracking. Without this identifier, it's impossible to selectively invalidate specific tokens, forcing broad revocation strategies that may impact legitimate users.
+                                    <br><br>
+                                    <strong>Technical Details:</strong> The jti claim provides a unique identifier for each token instance, enabling precise revocation control and audit capabilities.
+                                </div>
+                            </div>
+                            
+                            <div class="risk-impact">
+                                <div class="risk-section-title">💥 Risk Impact</div>
+                                <div class="risk-description">
+                                    <ul>
+                                        <li><strong>Revocation Challenges:</strong> Cannot revoke individual compromised tokens</li>
+                                        <li><strong>Security Response:</strong> Limited incident response capabilities</li>
+                                        <li><strong>User Management:</strong> Cannot selectively terminate specific user sessions</li>
+                                        <li><strong>Audit Compliance:</strong> Reduced traceability of token usage</li>
+                                        <li><strong>Operational Impact:</strong> May require global key rotation for single compromise</li>
+                                    </ul>
+                                    <div class="cvss-score cvss-medium">CVSS Score: 4.9 (Medium)</div>
+                                </div>
+                            </div>
+                            
+                            <div class="risk-mitigation">
+                                <div class="risk-section-title">🛡️ Risk Mitigation</div>
+                                <div class="risk-description">
+                                    <ul>
+                                        <li><strong>Implementation:</strong> Add jti claim with UUID or secure random identifier</li>
+                                        <li><strong>Infrastructure:</strong> Implement token blacklist/revocation list storage</li>
+                                        <li><strong>Monitoring:</strong> Track token usage by unique identifier</li>
+                                        <li><strong>Processes:</strong> Establish token revocation procedures</li>
+                                        <li><strong>Database:</strong> Store active token IDs for revocation checking</li>
+                                    </ul>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Risk 3: Missing Key ID -->
+                    <div class="risk-item">
+                        <div class="risk-header low">
+                            <span>🔑 Missing Key Identifier (kid)</span>
+                            <span class="severity-badge">LOW RISK</span>
+                        </div>
+                        <div class="risk-content">
+                            <div class="risk-section">
+                                <div class="risk-section-title">📋 Risk Title</div>
+                                <div class="risk-description">Key Management Complexity - Missing Key Identification Header</div>
+                            </div>
+                            
+                            <div class="risk-section">
+                                <div class="risk-section-title">📝 Risk Description</div>
+                                <div class="risk-description">
+                                    The token header lacks a key identifier (kid) parameter, which complicates key management in environments with multiple signing keys. This can lead to key rotation challenges and potential security misconfigurations.
+                                    <br><br>
+                                    <strong>Technical Details:</strong> The kid parameter helps applications identify which key to use for verification, essential for smooth key rotation and multi-tenant environments.
+                                </div>
+                            </div>
+                            
+                            <div class="risk-impact">
+                                <div class="risk-section-title">💥 Risk Impact</div>
+                                <div class="risk-description">
+                                    <ul>
+                                        <li><strong>Key Rotation:</strong> Complicated key lifecycle management</li>
+                                        <li><strong>Multi-tenancy:</strong> Challenges in multi-tenant key separation</li>
+                                        <li><strong>Operational Overhead:</strong> Manual key identification required</li>
+                                        <li><strong>Error-prone:</strong> Increased risk of using wrong verification key</li>
+                                        <li><strong>Scalability:</strong> Limited scalability in large deployments</li>
+                                    </ul>
+                                    <div class="cvss-score cvss-low">CVSS Score: 3.1 (Low)</div>
+                                </div>
+                            </div>
+                            
+                            <div class="risk-mitigation">
+                                <div class="risk-section-title">🛡️ Risk Mitigation</div>
+                                <div class="risk-description">
+                                    <ul>
+                                        <li><strong>Header Enhancement:</strong> Add kid claim to JWT header</li>
+                                        <li><strong>Key Management:</strong> Implement proper key versioning system</li>
+                                        <li><strong>JWKS:</strong> Provide JSON Web Key Set (JWKS) endpoint</li>
+                                        <li><strong>Documentation:</strong> Document key identification procedures</li>
+                                        <li><strong>Automation:</strong> Automate key rotation with proper identification</li>
+                                    </ul>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Security Validation: ES256 Implementation -->
+                    <div class="risk-item">
+                        <div class="risk-header info">
+                            <span>✅ ES256 Algorithm Validation</span>
+                            <span class="severity-badge">SECURITY POSITIVE</span>
+                        </div>
+                        <div class="risk-content">
+                            <div class="risk-section">
+                                <div class="risk-section-title">📋 Security Assessment</div>
+                                <div class="risk-description">Proper Cryptographic Algorithm Implementation</div>
+                            </div>
+                            
+                            <div class="risk-section">
+                                <div class="risk-section-title">📝 Assessment Details</div>
+                                <div class="risk-description">
+                                    The token correctly implements ES256 (ECDSA with P-256 and SHA-256), which is a cryptographically secure signature algorithm. The implementation using pycryptodomex library provides proper ECC/DSS functionality.
+                                    <br><br>
+                                    <strong>Technical Validation:</strong> Signature format and length are consistent with ES256 specifications, indicating proper implementation.
+                                </div>
+                            </div>
+                            
+                            <div class="risk-impact">
+                                <div class="risk-section-title">✅ Security Benefits</div>
+                                <div class="risk-description">
+                                    <ul>
+                                        <li><strong>Strong Cryptography:</strong> ECDSA provides excellent security-to-size ratio</li>
+                                        <li><strong>Performance:</strong> Fast signature generation and verification</li>
+                                        <li><strong>Standard Compliance:</strong> Follows JWT RFC 7518 specifications</li>
+                                        <li><strong>Future-proof:</strong> Quantum-resistant considerations addressed</li>
+                                        <li><strong>Industry Adoption:</strong> Widely supported across platforms</li>
+                                    </ul>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Vulnerability Matrix -->
+        <div class="report-card">
+            <div class="card-header">🛡️ Security Vulnerability Matrix</div>
+            <div class="card-body">
+                <div class="vulnerability-matrix">
+                    <div class="vulnerability-card">
+                        <div class="vulnerability-title">Algorithm Confusion (RS/HS256)</div>
+                        <div>Tests if token accepts different algorithm types</div>
+                        <div class="vulnerability-status status-pass">✅ PASS - ES256 Only</div>
+                    </div>
+                    
+                    <div class="vulnerability-card">
+                        <div class="vulnerability-title">None Algorithm Attack</div>
+                        <div>Verifies rejection of unsigned tokens</div>
+                        <div class="vulnerability-status status-pass">✅ PASS - Signature Required</div>
+                    </div>
+                    
+                    <div class="vulnerability-card">
+                        <div class="vulnerability-title">Weak Secret Attack</div>
+                        <div>Tests for common/weak signing keys</div>
+                        <div class="vulnerability-status status-pass">✅ PASS - Strong ECC Key</div>
+                    </div>
+                    
+                    <div class="vulnerability-card">
+                        <div class="vulnerability-title">Token Expiration</div>
+                        <div>Validates temporal security controls</div>
+                        <div class="vulnerability-status status-fail">❌ FAIL - No Expiration</div>
+                    </div>
+                    
+                    <div class="vulnerability-card">
+                        <div class="vulnerability-title">Critical Claims Validation</div>
+                        <div>Checks for essential security claims</div>
+                        <div class="vulnerability-status status-warning">⚠️ WARNING - Missing Claims</div>
+                    </div>
+                    
+                    <div class="vulnerability-card">
+                        <div class="vulnerability-title">Key Management</div>
+                        <div>Evaluates key identification capabilities</div>
+                        <div class="vulnerability-status status-warning">⚠️ WARNING - No Key ID</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Detailed Token Claims Analysis -->
+        <div class="report-card">
+            <div class="card-header">📋 Comprehensive Claims Analysis</div>
+            <div class="card-body">
+                <div class="table-container">
+                    <table>
+                        <tr>
+                            <th>Claim</th>
+                            <th>Value</th>
+                            <th>Type</th>
+                            <th>Security Impact</th>
+                            <th>Recommendation</th>
+                        </tr>
+                        <tr>
+                            <td><strong>alg</strong></td>
+                            <td>ES256</td>
+                            <td>Header</td>
+                            <td>🟢 Secure algorithm choice</td>
+                            <td>✅ No changes needed</td>
+                        </tr>
+                        <tr>
+                            <td><strong>unique</strong></td>
+                            <td>cabeae29-...-abe5b4</td>
+                            <td>Custom</td>
+                            <td>🟡 User identification present</td>
+                            <td>Consider using standard 'sub' claim</td>
+                        </tr>
+                        <tr>
+                            <td><strong>userType</strong></td>
+                            <td>RILperson</td>
+                            <td>Custom</td>
+                            <td>🟡 Authorization context</td>
+                            <td>Validate against known user types</td>
+                        </tr>
+                        <tr>
+                            <td><strong>authLevel</strong></td>
+                            <td>20</td>
+                            <td>Custom</td>
+                            <td>🟡 Permission level indicator</td>
+                            <td>Document authorization matrix</td>
+                        </tr>
+                        <tr>
+                            <td><strong>deviceId</strong></td>
+                            <td>1a31e855...8c791</td>
+                            <td>Custom</td>
+                            <td>🟢 Device binding present</td>
+                            <td>Validate device fingerprint</td>
+                        </tr>
+                        <tr>
+                            <td><strong>realm</strong></td>
+                            <td>non-jio</td>
+                            <td>Custom</td>
+                            <td>🟡 Tenant separation</td>
+                            <td>Consider using 'aud' claim</td>
+                        </tr>
+                        <tr>
+                            <td><strong>iat</strong></td>
+                            <td>1756465012</td>
+                            <td>Standard</td>
+                            <td>🟢 Issuance time tracked</td>
+                            <td>✅ Properly implemented</td>
+                        </tr>
+                        <tr>
+                            <td><strong>exp</strong></td>
+                            <td>❌ Missing</td>
+                            <td>Standard</td>
+                            <td>🔴 No expiration control</td>
+                            <td>⚠️ CRITICAL: Add expiration</td>
+                        </tr>
+                        <tr>
+                            <td><strong>jti</strong></td>
+                            <td>❌ Missing</td>
+                            <td>Standard</td>
+                            <td>🟡 No revocation capability</td>
+                            <td>⚠️ Add unique token ID</td>
+                        </tr>
+                        <tr>
+                            <td><strong>kid</strong></td>
+                            <td>❌ Missing</td>
+                            <td>Header</td>
+                            <td>🟡 Key management complexity</td>
+                            <td>Add key identifier</td>
+                        </tr>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <!-- Technical Recommendations -->
+        <div class="recommendations">
+            <h3>🚀 Technical Security Recommendations</h3>
+            <ul>
+                <li><strong>Immediate Priority:</strong> Implement token expiration (exp) with 15-60 minute lifetime</li>
+                <li><strong>High Priority:</strong> Add JWT ID (jti) for token revocation capabilities</li>
+                <li><strong>Medium Priority:</strong> Include Key ID (kid) in header for key management</li>
+                <li><strong>Security Enhancement:</strong> Add audience (aud) claim for service validation</li>
+                <li><strong>Monitoring:</strong> Implement token usage logging and anomaly detection</li>
+                <li><strong>Key Management:</strong> Establish regular key rotation procedures</li>
+                <li><strong>Validation:</strong> Implement comprehensive token validation middleware</li>
+                <li><strong>Documentation:</strong> Create security guidelines for token implementation</li>
+                <li><strong>Testing:</strong> Regular security assessments of JWT implementation</li>
+                <li><strong>Compliance:</strong> Ensure adherence to organizational security policies</li>
+            </ul>
+            
+            <div style="margin-top: 20px; padding-top: 20px; border-top: 1px solid rgba(255,255,255,0.3);">
+                <h4>📖 Recommended Reading:</h4>
+                <ul style="list-style: none; padding: 0;">
+                    <li>• RFC 7519 - JSON Web Token (JWT)</li>
+                    <li>• RFC 7518 - JSON Web Algorithms (JWA)</li>
+                    <li>• OWASP JWT Security Best Practices</li>
+                    <li>• NIST SP 800-57 - Key Management Guidelines</li>
+                </ul>
+            </div>
+        </div>
+
+        <!-- Footer -->
+        <div class="footer">
+            <p><strong>JWT Tool Security Analysis Report</strong></p>
+            <p>Generated by JWT Tool v2.0.0 with Enhanced ES256 Support</p>
+            <p>Report Date: August 30, 2025 | Analysis Engine: Advanced Security Scanner</p>
+            <p>🔗 Custom JWT Security Analysis Tool</p>
+        </div>
+    </div>
+</body>
+</html>

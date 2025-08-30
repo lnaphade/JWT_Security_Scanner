@@ -1,0 +1,11 @@
+2025-08-22 17:30:16,515 - INFO - JWT Tool Standalone GUI started
+2025-08-22 17:30:16,557 - INFO - JWT Tool Standalone started successfully
+2025-08-22 17:30:21,524 - INFO - JWT decoded successfully
+2025-08-22 17:30:26,447 - INFO - Token loaded for editing
+2025-08-22 17:30:43,372 - INFO - JWT verification completed: False
+2025-08-29 16:31:31,675 - INFO - JWT Tool Standalone GUI started
+2025-08-29 16:31:31,712 - INFO - JWT Tool Standalone started successfully
+2025-08-29 16:31:49,665 - INFO - Security scan completed: 0 vulns, 1 warnings
+2025-08-29 16:49:47,839 - INFO - JWT Tool Standalone GUI started
+2025-08-29 16:49:47,889 - INFO - JWT Tool Standalone started successfully
+2025-08-29 16:50:23,768 - INFO - Security scan completed: 0 vulns, 1 warnings

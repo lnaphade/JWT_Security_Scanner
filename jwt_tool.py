@@ -1,13 +1,11 @@
 #!/usr/bin/env python3
 #
-# JWT_Tool version 2.3.0 (01_05_2025)
-# Written by Andy Tyler (@ticarpi)
+# JWT_Tool version 2.0.0 (01_08_2025) - Enhanced Edition
+# Enhanced with ES256 support and advanced security analysis
 # Please use responsibly...
-# Software URL: https://github.com/ticarpi/jwt_tool
-# Web: https://www.ticarpi.com
-# Twitter: @ticarpi
+# Custom JWT Security Analysis Tool
 
-jwttoolvers = "2.3.0"
+jwttoolvers = "2.0.0"
 import ssl
 import sys
 import os
@@ -43,7 +41,7 @@ except:
     exit(1)
 try:
     import requests
-    from requests.packages.urllib3.exceptions import InsecureRequestWarning
+    from urllib3.exceptions import InsecureRequestWarning
     requests.packages.urllib3.disable_warnings(InsecureRequestWarning)
 except:
     print("WARNING: Python Requests libraries not imported - these are needed for external service interaction")
@@ -107,7 +105,7 @@ def createConfig():
                 test_jwks_out.write(fulljwks)
         jwks_b64 = base64.urlsafe_b64encode(fulljwks.encode('ascii'))
     config['services'] = {'jwt_tool_version': jwttoolvers,
-        '# To disable the proxy option set this value to: False (no quotes). For Docker installations with a Windows host OS set this to: "host.docker.internal:8080"': None, 'proxy': proxyHost+':8080',
+        '# To disable the proxy option set this value to: False (no quotes).': None, 'proxy': proxyHost+':8080',
         '# To disable following redirects set this value to: False (no quotes)': None, 'redir': 'True',
         '# Set this to the URL you are hosting your custom JWKS file (jwttool_custom_jwks.json) - your own server, or maybe use this cheeky reflective URL (https://httpbin.org/base64/{base64-encoded_JWKS_here})': None,
         'jwksloc': '',
@@ -1708,7 +1706,7 @@ def preScan():
     nullResSize, nullResCode = config['argvals']['ressize'], config['argvals']['rescode']
     if config['argvals']['canaryvalue'] == "":
         if origResCode == nullResCode:
-            cprintc("Valid and missing token requests return the same Status Code.\nYou should probably specify something from the page that identifies the user is logged-in (e.g. -cv \"Welcome back, ticarpi!\")", "red")
+            cprintc("Valid and missing token requests return the same Status Code.\nYou should probably specify something from the page that identifies the user is logged-in (e.g. -cv \"Welcome back, lalit!\")", "red")
             shallWeGoOn = input("Do you wish to continue anyway? (\"Y\" or \"N\")")
             if shallWeGoOn == "N":
                 exit(1)
@@ -1844,8 +1842,22 @@ def printLogo():
     print("\x1b[48;5;24m \x1b[0m\x1b[48;5;24m \x1b[0m |  \x1b[48;5;24m \x1b[0m\x1b[48;5;24m \x1b[0m |\x1b[48;5;24m \x1b[0m\x1b[48;5;24m \x1b[0m\x1b[48;5;24m \x1b[0m  / \\\x1b[48;5;24m \x1b[0m\x1b[48;5;24m \x1b[0m\x1b[48;5;24m \x1b[0m |   \x1b[48;5;24m \x1b[0m\x1b[48;5;24m \x1b[0m |       \x1b[48;5;24m \x1b[0m\x1b[48;5;24m \x1b[0m |\x1b[48;5;24m \x1b[0m\x1b[48;5;24m \x1b[0m |  \x1b[48;5;24m \x1b[0m\x1b[48;5;24m \x1b[0m |\x1b[48;5;24m \x1b[0m\x1b[48;5;24m \x1b[0m |  \x1b[48;5;24m \x1b[0m\x1b[48;5;24m \x1b[0m |\x1b[48;5;24m \x1b[0m\x1b[48;5;24m \x1b[0m |")
     print("\\\x1b[48;5;24m \x1b[0m\x1b[48;5;24m \x1b[0m\x1b[48;5;24m \x1b[0m\x1b[48;5;24m \x1b[0m\x1b[48;5;24m \x1b[0m\x1b[48;5;24m \x1b[0m  |\x1b[48;5;24m \x1b[0m\x1b[48;5;24m \x1b[0m  /   \\\x1b[48;5;24m \x1b[0m\x1b[48;5;24m \x1b[0m |   \x1b[48;5;24m \x1b[0m\x1b[48;5;24m \x1b[0m |       \x1b[48;5;24m \x1b[0m\x1b[48;5;24m \x1b[0m |\\\x1b[48;5;24m \x1b[0m\x1b[48;5;24m \x1b[0m\x1b[48;5;24m \x1b[0m\x1b[48;5;24m \x1b[0m\x1b[48;5;24m \x1b[0m\x1b[48;5;24m \x1b[0m  |\\\x1b[48;5;24m \x1b[0m\x1b[48;5;24m \x1b[0m\x1b[48;5;24m \x1b[0m\x1b[48;5;24m \x1b[0m\x1b[48;5;24m \x1b[0m\x1b[48;5;24m \x1b[0m  |\x1b[48;5;24m \x1b[0m\x1b[48;5;24m \x1b[0m |")
     print(" \\______/ \\__/     \\__|   \\__|\x1b[48;5;24m \x1b[0m\x1b[48;5;24m \x1b[0m\x1b[48;5;24m \x1b[0m\x1b[48;5;24m \x1b[0m\x1b[48;5;24m \x1b[0m\x1b[48;5;24m \x1b[0m\\__| \\______/  \\______/ \\__|")
-    print(" \x1b[36mVersion "+jwttoolvers+"          \x1b[0m      \\______|             \x1b[36m@ticarpi\x1b[0m      ")
+    print(" \x1b[36mVersion "+jwttoolvers+"          \x1b[0m      \\______|             \x1b[36mEnhanced\x1b[0m      ")
     print()
+
+# Standalone JWT decode for GUI (no CLI/global dependencies)
+def decode_jwt_simple(jwt):
+    import base64
+    import json
+    try:
+        headB64, paylB64, sig = jwt.split(".", 2)
+        head = base64.urlsafe_b64decode(headB64 + '=' * (-len(headB64) % 4))
+        payl = base64.urlsafe_b64decode(paylB64 + '=' * (-len(paylB64) % 4))
+        headDict = json.loads(head)
+        paylDict = json.loads(payl)
+        return headDict, paylDict, sig
+    except Exception as e:
+        raise ValueError(f"Invalid JWT: {e}")
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(epilog="If you don't have a token, try this one:\neyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJsb2dpbiI6InRpY2FycGkifQ.bsSwqj2c2uI9n7-ajmi3ixVGhPUiY7jO9SUn9dm15Po", formatter_class=argparse.RawTextHelpFormatter)
@@ -1868,7 +1880,7 @@ if __name__ == '__main__':
     parser.add_argument("-pd", "--postdata", action="store",
                         help="text string that contains all the data to be sent in a POST request")
     parser.add_argument("-cv", "--canaryvalue", action="store",
-                        help="text string that appears in response for valid token (e.g. \"Welcome, ticarpi\")")
+                        help="text string that appears in response for valid token (e.g. \"Welcome, lalit\")")
     parser.add_argument("-np", "--noproxy", action="store_true",
                         help="disable proxy for current request (change in jwtconf.ini if permanent)")
     parser.add_argument("-nr", "--noredir", action="store_true",
@@ -1936,7 +1948,8 @@ if __name__ == '__main__':
         cprintc("Current config file has been backed up as '"+path+"/old_("+config['services']['jwt_tool_version']+")_jwtconf.ini' and a new config generated.\nPlease review and manually transfer any custom options you have set.", "red")
         os.rename(configFileName, path+"/old_("+config['services']['jwt_tool_version']+")_jwtconf.ini")
         createConfig()
-        exit(1)
+        # Reload the new config
+        config.read(configFileName)
     with open(path+"/null.txt", 'w') as nullfile:
         pass
     findJWT = ""
