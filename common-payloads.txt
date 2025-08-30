@@ -1,0 +1,17 @@
+iss
+iat
+nbf
+exp
+aud
+sub
+jti
+scope
+roles
+permissions
+email
+username
+given_name
+family_name
+nonce
+amr
+azp

@@ -1,0 +1,4 @@
+eyJhbGciOiJIUzI1NiJ9
+{"typ":"JWT","alg":"HS256"}
+{"alg":"RS256","typ":"JWT"}
+{"alg":"ES256","typ":"JWT"}

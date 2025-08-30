@@ -1,0 +1,9 @@
+alg
+kid
+typ
+cty
+x5t
+x5c
+crit
+jku
+jwk
