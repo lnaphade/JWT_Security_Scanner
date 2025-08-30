@@ -1,0 +1,53 @@
+Commercial License Agreement (CLA)
+
+Version 1.0 – 30 August 2025
+
+Copyright (c) 2025 Your Name
+All rights reserved.
+
+This Commercial License Agreement ("Agreement") governs commercial use of the jwt_tool software ("Software"). If you ("Licensee") have received written authorization and a commercial license key or invoice reference, you are granted the rights below subject to payment of applicable fees and compliance with this Agreement.
+
+1. Grant of License
+Subject to payment and compliance, Licensor grants Licensee a non-exclusive, non-transferable, worldwide license to:
+  a. Use, integrate, and distribute the Software solely as embedded functionality within Licensee products or internal systems.
+  b. Modify the Software for internal use.
+  c. Distribute compiled or obfuscated derivatives as part of Licensee products.
+
+2. Restrictions
+Licensee shall NOT:
+  a. Redistribute the Software in source form as a standalone competing product.
+  b. Remove or alter copyright and license notices.
+  c. Use Licensor name or trademarks to endorse products without written consent.
+  d. Sub-license the Software except as embedded in an integrated product.
+
+3. Ownership
+The Software is licensed, not sold. All rights not expressly granted remain with Licensor.
+
+4. Confidentiality
+Any provided commercial keys, support materials, or pricing are confidential.
+
+5. Fees & Audit
+Commercial usage requires a paid license. Licensor may request a good-faith self-audit (not more than annually) confirming scope of deployment.
+
+6. Warranty Disclaimer
+THE SOFTWARE IS PROVIDED "AS IS" WITHOUT WARRANTY OF ANY KIND. Any optional support services are governed by a separate agreement.
+
+7. Limitation of Liability
+TO THE MAXIMUM EXTENT PERMITTED BY LAW, LICENSOR'S AGGREGATE LIABILITY SHALL NOT EXCEED THE FEES PAID IN THE 12 MONTHS PRECEDING THE CLAIM.
+
+8. Term & Termination
+This Agreement is effective upon acceptance and continues until terminated. Either party may terminate for material breach not cured within 30 days' notice. Upon termination, Licensee must cease commercial distribution and remove the Software from active products (except existing shipped binaries).
+
+9. Indemnity
+Licensee agrees to indemnify and hold harmless Licensor from claims arising out of Licensee's misuse or unlawful distribution of the Software.
+
+10. Governing Law
+This Agreement is governed by the laws of your jurisdiction (specify in executed order form). The UN Convention on Contracts for the International Sale of Goods (CISG) does not apply.
+
+11. Priority
+If there is a conflict between this Agreement and any purchase order, this Agreement controls unless explicitly superseded in writing.
+
+12. Contact
+For pricing, enterprise features, or extended rights: licensing@example.com
+
+BY USING THE SOFTWARE COMMERCIALLY WITHOUT AN EXECUTED AGREEMENT YOU ARE IN VIOLATION OF THE EUL AND MUST OBTAIN A COMMERCIAL LICENSE.

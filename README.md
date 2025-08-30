@@ -146,14 +146,23 @@ Your Name
 - Email: lnaphade@gmail.com
 
 ## 📄 License
-This project is distributed under the Educational Use License (EUL) located in the `LICENSE` file.
+This project uses a dual-license model:
 
-Permitted: non-commercial educational instruction, academic research, personal learning.
-Prohibited without permission: any commercial or monetized use (including SaaS, paid services, bundled distributions).
+1. Educational Use License (EUL) – default for clones/forks. Allows: non-commercial educational instruction, academic research, personal learning. Prohibits all commercial / monetized use.
+2. Commercial License (CLA) – available via written agreement for internal business use, embedding in products, or SaaS deployment.
 
-For commercial licensing inquiries, contact: licensing@example.com
+Files:
+- `LICENSE` (EUL)
+- `COMMERCIAL_LICENSE` (template terms for commercial agreements)
 
-If you require an OSI-approved open source license instead, you can fork and re-license under a permissive license (MIT / Apache-2.0 / BSD-3-Clause) subject to removing the EUL text and adding your own notice.
+Request a commercial license: lnaphade@gmail.com (describe intended use, distribution model, user scale).
+
+Need OSI open source? You may fork and re-license under MIT/Apache-2.0/BSD-3-Clause ONLY if you remove proprietary Educational / Commercial terms and clearly differentiate your fork.
+
+Key Notes:
+- No source redistribution for commercial competitors without a CLA.
+- Security research publication under EUL is allowed (cite project).
+- Derivatives under EUL must retain notices.
 
 ## 🙏 Acknowledgments
 Thanks to the security research community and library maintainers.
