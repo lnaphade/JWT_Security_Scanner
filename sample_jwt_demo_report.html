@@ -1549,7 +1549,7 @@
                 </div>
                 <div class="meta-item">
                     <i class="fas fa-ruler"></i>
-                    <span>Token Size: 484 characters</span>
+                    <span>Token Size: 155 characters</span>
                 </div>
                 <div class="meta-item">
                     <i class="fas fa-shield-virus"></i>
@@ -1610,12 +1610,12 @@
                     </div>
                     <div class="summary-card medium animate-bounce-in" style="animation-delay: 0.2s;">
                         <i class="fas fa-exclamation-circle" style="font-size: 1.5em; color: #d97706; margin-bottom: 10px;"></i>
-                        <span class="summary-number">1</span>
+                        <span class="summary-number">2</span>
                         <span class="summary-label">Medium Risks</span>
                     </div>
                     <div class="summary-card low animate-bounce-in" style="animation-delay: 0.3s;">
                         <i class="fas fa-info-circle" style="font-size: 1.5em; color: #059669; margin-bottom: 10px;"></i>
-                        <span class="summary-number">2</span>
+                        <span class="summary-number">1</span>
                         <span class="summary-label">Low Risks</span>
                     </div>
                     <div class="summary-card animate-bounce-in" style="border-left-color: #6366f1; background: linear-gradient(135deg, #eef2ff 0%, #ddd6fe 100%); animation-delay: 0.4s;">
@@ -1693,13 +1693,13 @@
                                 <div class="vuln-description">Tests for common/weak signing keys</div>
                                 <div class="vuln-details">HMAC algorithm - verify secret strength</div>
                             </div>
-                            <div class="vuln-item pass">
+                            <div class="vuln-item fail">
                                 <div class="vuln-header">
-                                    <i class="fas fa-check-circle"></i>
+                                    <i class="fas fa-times-circle"></i>
                                     <span>Token Expiration</span>
                                 </div>
                                 <div class="vuln-description">Validates temporal security controls</div>
-                                <div class="vuln-details">Token has valid expiration time</div>
+                                <div class="vuln-details">No expiration claim present</div>
                             </div>
                             <div class="vuln-item warning">
                                 <div class="vuln-header">
@@ -1707,7 +1707,7 @@
                                     <span>Critical Claims Validation</span>
                                 </div>
                                 <div class="vuln-description">Checks for essential security claims</div>
-                                <div class="vuln-details">Missing claims: jti</div>
+                                <div class="vuln-details">Missing claims: exp, jti</div>
                             </div>
                             <div class="vuln-item warning">
                                 <div class="vuln-header">
@@ -1781,6 +1781,31 @@
                 <div class="risk-assessment">
                     <div class="risk-item">
                         <div class="risk-header medium">
+                            <span><i class="fas fa-exclamation-circle"></i> Missing Token Expiration (exp)</span>
+                            <span class="severity-badge" style="background: linear-gradient(135deg, rgba(0,0,0,0.2) 0%, rgba(0,0,0,0.4) 100%);">
+                                <i class="fas fa-exclamation-triangle" style="color: white;"></i>
+                                MEDIUM RISK
+                            </span>
+                        </div>
+                        <div class="risk-content">
+                            <div class="risk-section">
+                                <div class="risk-section-title"><i class="fas fa-file-alt"></i> Risk Description</div>
+                                <div class="risk-description">Token lacks expiration claim, remaining valid indefinitely</div>
+                            </div>
+                            
+                            <div class="risk-impact">
+                                <div class="risk-section-title"><i class="fas fa-bolt"></i> Potential Impact</div>
+                                <div class="risk-description">Stolen tokens remain valid until key rotation</div>
+                            </div>
+                            
+                            <div class="risk-mitigation">
+                                <div class="risk-section-title"><i class="fas fa-tools"></i> Recommended Mitigation</div>
+                                <div class="risk-description">Add exp claim with reasonable timeout (15-60 minutes)</div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="risk-item">
+                        <div class="risk-header medium">
                             <span><i class="fas fa-exclamation-circle"></i> Missing JWT Identifier (jti)</span>
                             <span class="severity-badge" style="background: linear-gradient(135deg, rgba(0,0,0,0.2) 0%, rgba(0,0,0,0.4) 100%);">
                                 <i class="fas fa-exclamation-triangle" style="color: white;"></i>
@@ -1829,31 +1854,6 @@
                             </div>
                         </div>
                     </div>
-                    <div class="risk-item">
-                        <div class="risk-header low">
-                            <span><i class="fas fa-exclamation-circle"></i> Extended Validity Period</span>
-                            <span class="severity-badge" style="background: linear-gradient(135deg, rgba(0,0,0,0.2) 0%, rgba(0,0,0,0.4) 100%);">
-                                <i class="fas fa-info-circle" style="color: white;"></i>
-                                LOW RISK
-                            </span>
-                        </div>
-                        <div class="risk-content">
-                            <div class="risk-section">
-                                <div class="risk-section-title"><i class="fas fa-file-alt"></i> Risk Description</div>
-                                <div class="risk-description">Token valid for 30 days - unusually long</div>
-                            </div>
-                            
-                            <div class="risk-impact">
-                                <div class="risk-section-title"><i class="fas fa-bolt"></i> Potential Impact</div>
-                                <div class="risk-description">Increased exposure window if token is compromised</div>
-                            </div>
-                            
-                            <div class="risk-mitigation">
-                                <div class="risk-section-title"><i class="fas fa-tools"></i> Recommended Mitigation</div>
-                                <div class="risk-description">Consider shorter token lifetime with refresh mechanism</div>
-                            </div>
-                        </div>
-                    </div>
                 </div>
             </div>
         </div>
@@ -1890,13 +1890,13 @@
                             HMAC algorithm - verify secret strength
                         </div>
                     </div>
-                    <div class="vuln-item pass">
+                    <div class="vuln-item fail">
                         <div class="vuln-title">
-                            <i class="fas fa-check-circle" style="color: #10b981;"></i>
+                            <i class="fas fa-times-circle" style="color: #dc2626;"></i>
                             Token Expiration
                         </div>
                         <div style="color: #64748b; line-height: 1.6;">
-                            Token has valid expiration time
+                            No expiration claim present
                         </div>
                     </div>
                     <div class="vuln-item warning">
@@ -1905,7 +1905,7 @@
                             Critical Claims Validation
                         </div>
                         <div style="color: #64748b; line-height: 1.6;">
-                            Missing claims: jti
+                            Missing claims: exp, jti
                         </div>
                     </div>
                     <div class="vuln-item warning">
