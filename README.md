@@ -2,7 +2,13 @@
 
 **Version 2.0.0 (01 August 2025)**
 
-A comprehensive, streamlined JWT (JSON Web Token) security testing toolkit with both CLI and GUI interfaces. This tool provides complete JWT analysis, manipulation, and vulnerability testing capabilities in a clean, efficient codebase.
+A comprehensive, streamlined JWT (JSON Web Token) security testing toolkit with bot## 👨‍💻 Author
+
+**Lalit Naphade**
+- Website: https://yourwebsite.com
+- GitHub: https://github.com/yourusername/jwt_tool
+- Twitter: @lalit_1985
+- Email: lnaphade@gmail.comand GUI interfaces. This tool provides complete JWT analysis, manipulation, and vulnerability testing capabilities in a clean, efficient codebase.
 
 ## 🚀 Quick Start
 
