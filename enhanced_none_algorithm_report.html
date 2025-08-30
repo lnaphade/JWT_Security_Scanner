@@ -1,364 +1,4 @@
-# Copyright (c) 2025 Your Name
-# Licensed under the Educational Use License (EUL) OR Commercial License Agreement (CLA)
-# See the root LICENSE (EUL) and COMMERCIAL_LICENSE files for full terms.
-# If you obtained a commercial license, use constitutes acceptance of the CLA.
-# Unauthorized commercial use is prohibited.
-
-#!/usr/bin/env python3
-"""
-JWT Security Report Generator
-Comprehensive security analysis and HTML report generation for JWT tokens
-"""
-
-import json
-import base64
-import time
-import uuid
-from datetime import datetime
-from typing import Dict, List, Tuple, Optional
-
-class JWTSecurityAnalyzer:
-    """Advanced JWT security analysis engine"""
-    
-    def __init__(self):
-        self.vulnerabilities = []
-        self.warnings = []
-        self.info_items = []
-        self.technical_details = {}
-        
-    def decode_jwt(self, token: str) -> Tuple[Optional[Dict], Optional[Dict], Optional[str]]:
-        """Decode JWT token into header, payload, and signature components"""
-        try:
-            parts = token.split('.')
-            if len(parts) != 3:
-                return None, None, None
-            
-            def fix_padding(data: str) -> str:
-                """Fix base64url padding"""
-                data += '=' * (4 - len(data) % 4) if len(data) % 4 != 0 else ''
-                return data.replace('-', '+').replace('_', '/')
-            
-            header = json.loads(base64.b64decode(fix_padding(parts[0])).decode('utf-8'))
-            payload = json.loads(base64.b64decode(fix_padding(parts[1])).decode('utf-8'))
-            signature = parts[2]
-            
-            # Store encoded parts for HTML report
-            self.encoded_parts = {
-                'header': parts[0],
-                'payload': parts[1], 
-                'signature': parts[2]
-            }
-            
-            return header, payload, signature
-            
-        except Exception as e:
-            print(f"Error decoding JWT: {e}")
-            return None, None, None
-    
-    def analyze_algorithm_security(self, header: Dict) -> Dict:
-        """Analyze JWT algorithm security"""
-        alg = header.get('alg', '')
-        analysis = {
-            'algorithm': alg,
-            'security_level': 'Unknown',
-            'recommendations': [],
-            'vulnerabilities': []
-        }
-        
-        if alg in ['none', 'None', 'NONE']:
-            analysis['security_level'] = 'Critical Risk'
-            analysis['vulnerabilities'].append('Algorithm "none" bypasses signature verification')
-            
-        elif alg == 'HS256':
-            analysis['security_level'] = 'Medium'
-            analysis['recommendations'].append('Ensure strong secret key (>256 bits)')
-            analysis['recommendations'].append('Protect against RS/HS256 confusion attacks')
-            
-        elif alg in ['ES256', 'ES384', 'ES512']:
-            analysis['security_level'] = 'High'
-            analysis['recommendations'].append('Excellent choice - ECDSA provides strong security')
-            
-        elif alg in ['RS256', 'RS384', 'RS512']:
-            analysis['security_level'] = 'High'
-            analysis['recommendations'].append('Strong algorithm - ensure key size >= 2048 bits')
-            
-        return analysis
-    
-    def analyze_claims_security(self, header: Dict, payload: Dict) -> List[Dict]:
-        """Comprehensive claims security analysis"""
-        issues = []
-        current_time = int(time.time())
-        
-        # Missing expiration check
-        if 'exp' not in payload:
-            issues.append({
-                'severity': 'medium',
-                'title': 'Missing Token Expiration (exp)',
-                'description': 'Token lacks expiration claim, remaining valid indefinitely',
-                'impact': 'Stolen tokens remain valid until key rotation',
-                'mitigation': 'Add exp claim with reasonable timeout (15-60 minutes)',
-                'cvss_score': 5.4,
-                'technical_details': 'RFC 7519 recommends exp claim for temporal security controls'
-            })
-        
-        # Expired token check
-        if 'exp' in payload and payload['exp'] < current_time:
-            issues.append({
-                'severity': 'high',
-                'title': 'Expired Token',
-                'description': f'Token expired at {datetime.fromtimestamp(payload["exp"])}',
-                'impact': 'Token should be rejected by applications',
-                'mitigation': 'Generate new token with valid expiration',
-                'cvss_score': 7.2
-            })
-        
-        # Missing JWT ID
-        if 'jti' not in payload:
-            issues.append({
-                'severity': 'medium',
-                'title': 'Missing JWT Identifier (jti)',
-                'description': 'Token lacks unique identifier for revocation tracking',
-                'impact': 'Cannot selectively revoke individual tokens',
-                'mitigation': 'Add jti claim with UUID or secure random identifier',
-                'cvss_score': 4.9,
-                'technical_details': 'JTI enables token blacklisting and audit capabilities'
-            })
-        
-        # Missing Key ID in header
-        if 'kid' not in header:
-            issues.append({
-                'severity': 'low',
-                'title': 'Missing Key Identifier (kid)',
-                'description': 'Header lacks key identifier for key management',
-                'impact': 'Complications in key rotation and multi-tenant scenarios',
-                'mitigation': 'Add kid parameter to header for key identification',
-                'cvss_score': 3.1,
-                'technical_details': 'KID claim facilitates automated key rotation'
-            })
-        
-        # Future issuance check
-        if 'iat' in payload and payload['iat'] > current_time + 300:
-            issues.append({
-                'severity': 'medium',
-                'title': 'Future Issuance Date',
-                'description': f'Token issued in the future: {datetime.fromtimestamp(payload["iat"])}',
-                'impact': 'Potential clock synchronization or tampering issues',
-                'mitigation': 'Verify system clocks and token generation process',
-                'cvss_score': 4.3
-            })
-        
-        # Not-before check
-        if 'nbf' in payload and payload['nbf'] > current_time:
-            issues.append({
-                'severity': 'medium',
-                'title': 'Token Not Yet Valid',
-                'description': f'Token not valid until {datetime.fromtimestamp(payload["nbf"])}',
-                'impact': 'Token should be rejected until valid time',
-                'mitigation': 'Wait until nbf time or regenerate token',
-                'cvss_score': 3.7
-            })
-        
-        # Long validity period check
-        if 'exp' in payload and 'iat' in payload:
-            validity_period = payload['exp'] - payload['iat']
-            if validity_period > 86400:  # More than 24 hours
-                days = validity_period // 86400
-                issues.append({
-                    'severity': 'low',
-                    'title': 'Extended Validity Period',
-                    'description': f'Token valid for {days} days - unusually long',
-                    'impact': 'Increased exposure window if token is compromised',
-                    'mitigation': 'Consider shorter token lifetime with refresh mechanism',
-                    'cvss_score': 2.8
-                })
-        
-        return issues
-    
-    def generate_vulnerability_matrix(self, header: Dict, payload: Dict) -> List[Dict]:
-        """Generate comprehensive vulnerability assessment matrix"""
-        matrix = []
-        
-        # Algorithm confusion test
-        alg = header.get('alg', '')
-        if alg not in ['none', 'None', 'NONE']:
-            matrix.append({
-                'test': 'Algorithm Confusion (RS/HS256)',
-                'description': 'Tests if token accepts different algorithm types',
-                'status': 'pass',
-                'details': f'Token uses {alg} - properly configured'
-            })
-        else:
-            matrix.append({
-                'test': 'Algorithm Confusion (RS/HS256)',
-                'description': 'Tests if token accepts different algorithm types',
-                'status': 'fail',
-                'details': 'Token uses "none" algorithm - critical vulnerability'
-            })
-        
-        # None algorithm test
-        if alg != 'none':
-            matrix.append({
-                'test': 'None Algorithm Attack',
-                'description': 'Verifies rejection of unsigned tokens',
-                'status': 'pass',
-                'details': 'Signature required for token validation'
-            })
-        else:
-            matrix.append({
-                'test': 'None Algorithm Attack',
-                'description': 'Verifies rejection of unsigned tokens',
-                'status': 'fail',
-                'details': 'Token accepts no signature - critical vulnerability'
-            })
-        
-        # Weak secret test (for HMAC algorithms)
-        if alg.startswith('HS'):
-            matrix.append({
-                'test': 'Weak Secret Attack',
-                'description': 'Tests for common/weak signing keys',
-                'status': 'warning',
-                'details': 'HMAC algorithm - verify secret strength'
-            })
-        else:
-            matrix.append({
-                'test': 'Weak Secret Attack',
-                'description': 'Tests for common/weak signing keys',
-                'status': 'pass',
-                'details': f'{alg} uses asymmetric cryptography'
-            })
-        
-        # Expiration test
-        if 'exp' in payload:
-            current_time = int(time.time())
-            if payload['exp'] > current_time:
-                matrix.append({
-                    'test': 'Token Expiration',
-                    'description': 'Validates temporal security controls',
-                    'status': 'pass',
-                    'details': 'Token has valid expiration time'
-                })
-            else:
-                matrix.append({
-                    'test': 'Token Expiration',
-                    'description': 'Validates temporal security controls',
-                    'status': 'fail',
-                    'details': 'Token has expired'
-                })
-        else:
-            matrix.append({
-                'test': 'Token Expiration',
-                'description': 'Validates temporal security controls',
-                'status': 'fail',
-                'details': 'No expiration claim present'
-            })
-        
-        # Critical claims validation
-        critical_claims = ['exp', 'jti']
-        missing_claims = [claim for claim in critical_claims if claim not in payload]
-        if not missing_claims:
-            matrix.append({
-                'test': 'Critical Claims Validation',
-                'description': 'Checks for essential security claims',
-                'status': 'pass',
-                'details': 'All critical claims present'
-            })
-        else:
-            matrix.append({
-                'test': 'Critical Claims Validation',
-                'description': 'Checks for essential security claims',
-                'status': 'warning',
-                'details': f'Missing claims: {", ".join(missing_claims)}'
-            })
-        
-        # Key management test
-        if 'kid' in header:
-            matrix.append({
-                'test': 'Key Management',
-                'description': 'Evaluates key identification capabilities',
-                'status': 'pass',
-                'details': 'Key identifier present in header'
-            })
-        else:
-            matrix.append({
-                'test': 'Key Management',
-                'description': 'Evaluates key identification capabilities',
-                'status': 'warning',
-                'details': 'No key identifier in header'
-            })
-        
-        return matrix
-    
-    def analyze_token(self, token: str) -> Dict:
-        """Perform comprehensive token analysis"""
-        header, payload, signature = self.decode_jwt(token)
-        
-        if not header or not payload:
-            return {'error': 'Failed to decode JWT token'}
-        
-        # Perform various security analyses
-        algorithm_analysis = self.analyze_algorithm_security(header)
-        security_issues = self.analyze_claims_security(header, payload)
-        vulnerability_matrix = self.generate_vulnerability_matrix(header, payload)
-        
-        # Count issues by severity
-        severity_counts = {'critical': 0, 'high': 0, 'medium': 0, 'low': 0, 'info': 0}
-        for issue in security_issues:
-            severity = issue.get('severity', 'unknown')
-            if severity in severity_counts:
-                severity_counts[severity] += 1
-        
-        return {
-            'header': header,
-            'payload': payload,
-            'signature': signature,
-            'algorithm_analysis': algorithm_analysis,
-            'security_issues': security_issues,
-            'vulnerability_matrix': vulnerability_matrix,
-            'severity_counts': severity_counts,
-            'analysis_timestamp': datetime.now().isoformat(),
-            'token_size': len(token)
-        }
-
-def generate_html_report(analysis_result, token_parts):
-    """Generate comprehensive HTML security report with professional styling and FAQ section"""
-    timestamp = datetime.now().strftime("%B %d, %Y")
-    
-    # Algorithm descriptions dictionary
-    algorithm_descriptions = {
-        'ES256': 'ECDSA with P-256 curve and SHA-256 hash',
-        'ES384': 'ECDSA with P-384 curve and SHA-384 hash',
-        'ES512': 'ECDSA with P-521 curve and SHA-512 hash',
-        'RS256': 'RSA with PKCS#1 v1.5 padding and SHA-256 hash',
-        'RS384': 'RSA with PKCS#1 v1.5 padding and SHA-384 hash',
-        'RS512': 'RSA with PKCS#1 v1.5 padding and SHA-512 hash',
-        'PS256': 'RSA with PSS padding and SHA-256 hash',
-        'PS384': 'RSA with PSS padding and SHA-384 hash',
-        'PS512': 'RSA with PSS padding and SHA-512 hash',
-        'HS256': 'HMAC with SHA-256 hash function',
-        'HS384': 'HMAC with SHA-384 hash function',
-        'HS512': 'HMAC with SHA-512 hash function',
-        'none': 'No signature verification (DANGEROUS)'
-    }
-    
-    # Hash function mapping
-    hash_functions = {
-        'ES256': 'SHA-256', 'ES384': 'SHA-384', 'ES512': 'SHA-512',
-        'RS256': 'SHA-256', 'RS384': 'SHA-384', 'RS512': 'SHA-512',
-        'PS256': 'SHA-256', 'PS384': 'SHA-384', 'PS512': 'SHA-512',
-        'HS256': 'SHA-256', 'HS384': 'SHA-384', 'HS512': 'SHA-512',
-        'none': 'None'
-    }
-    
-    # Key type mapping
-    key_types = {
-        'ES256': 'ECDSA P-256', 'ES384': 'ECDSA P-384', 'ES512': 'ECDSA P-521',
-        'RS256': 'RSA', 'RS384': 'RSA', 'RS512': 'RSA',
-        'PS256': 'RSA', 'PS384': 'RSA', 'PS512': 'RSA',
-        'HS256': 'Symmetric HMAC', 'HS384': 'Symmetric HMAC', 'HS512': 'Symmetric HMAC',
-        'none': 'No Key Required'
-    }
-    
-    html_template = f'''<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
@@ -366,46 +6,46 @@ def generate_html_report(analysis_result, token_parts):
     <title>🔐 JWT Security Assessment & Vulnerability Analysis Report</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
-        * {{
+        * {
             margin: 0;
             padding: 0;
             box-sizing: border-box;
-        }}
+        }
         
-        body {{
+        body {
             font-family: 'Inter', 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
             line-height: 1.6;
             color: #2d3748;
             background: linear-gradient(135deg, #667eea 0%, #764ba2 50%, #f093fb 100%);
             min-height: 100vh;
             scroll-behavior: smooth;
-        }}
+        }
         
         /* Enhanced Scrollbar */
-        ::-webkit-scrollbar {{
+        ::-webkit-scrollbar {
             width: 14px;
-        }}
+        }
         
-        ::-webkit-scrollbar-track {{
+        ::-webkit-scrollbar-track {
             background: rgba(255, 255, 255, 0.1);
             border-radius: 10px;
             margin: 5px;
-        }}
+        }
         
-        ::-webkit-scrollbar-thumb {{
+        ::-webkit-scrollbar-thumb {
             background: linear-gradient(45deg, #667eea, #764ba2);
             border-radius: 10px;
             border: 2px solid rgba(255, 255, 255, 0.1);
             transition: all 0.3s ease;
-        }}
+        }
         
-        ::-webkit-scrollbar-thumb:hover {{
+        ::-webkit-scrollbar-thumb:hover {
             background: linear-gradient(45deg, #5a67d8, #6b46c1);
             transform: scale(1.1);
-        }}
+        }
         
         /* Scroll Progress Bar */
-        .scroll-progress {{
+        .scroll-progress {
             position: fixed;
             top: 0;
             left: 0;
@@ -414,10 +54,10 @@ def generate_html_report(analysis_result, token_parts):
             background: linear-gradient(90deg, #667eea, #764ba2, #f093fb);
             z-index: 9999;
             transition: width 0.3s ease;
-        }}
+        }
         
         /* Scroll to Top Button */
-        .scroll-to-top {{
+        .scroll-to-top {
             position: fixed;
             bottom: 30px;
             right: 30px;
@@ -437,148 +77,148 @@ def generate_html_report(analysis_result, token_parts):
             justify-content: center;
             font-size: 24px;
             box-shadow: 0 8px 25px rgba(0, 0, 0, 0.3);
-        }}
+        }
         
-        .scroll-to-top.visible {{
+        .scroll-to-top.visible {
             opacity: 1;
             visibility: visible;
             animation: pulse 2s infinite;
-        }}
+        }
         
-        .scroll-to-top:hover {{
+        .scroll-to-top:hover {
             transform: translateY(-5px) scale(1.1);
             box-shadow: 0 12px 35px rgba(0, 0, 0, 0.4);
-        }}
+        }
         
         /* Animation Keyframes */
-        @keyframes fadeInUp {{
-            from {{
+        @keyframes fadeInUp {
+            from {
                 opacity: 0;
                 transform: translateY(40px);
-            }}
-            to {{
+            }
+            to {
                 opacity: 1;
                 transform: translateY(0);
-            }}
-        }}
+            }
+        }
         
-        @keyframes fadeInLeft {{
-            from {{
+        @keyframes fadeInLeft {
+            from {
                 opacity: 0;
                 transform: translateX(-40px);
-            }}
-            to {{
+            }
+            to {
                 opacity: 1;
                 transform: translateX(0);
-            }}
-        }}
+            }
+        }
         
-        @keyframes fadeInRight {{
-            from {{
+        @keyframes fadeInRight {
+            from {
                 opacity: 0;
                 transform: translateX(40px);
-            }}
-            to {{
+            }
+            to {
                 opacity: 1;
                 transform: translateX(0);
-            }}
-        }}
+            }
+        }
         
-        @keyframes pulse {{
-            0%, 100% {{
+        @keyframes pulse {
+            0%, 100% {
                 transform: scale(1);
-            }}
-            50% {{
+            }
+            50% {
                 transform: scale(1.05);
-            }}
-        }}
+            }
+        }
         
-        @keyframes slideInFromTop {{
-            from {{
+        @keyframes slideInFromTop {
+            from {
                 opacity: 0;
                 transform: translateY(-60px);
-            }}
-            to {{
+            }
+            to {
                 opacity: 1;
                 transform: translateY(0);
-            }}
-        }}
+            }
+        }
         
-        @keyframes bounceIn {{
-            0% {{
+        @keyframes bounceIn {
+            0% {
                 opacity: 0;
                 transform: scale(0.3);
-            }}
-            50% {{
+            }
+            50% {
                 opacity: 1;
                 transform: scale(1.05);
-            }}
-            70% {{
+            }
+            70% {
                 transform: scale(0.9);
-            }}
-            100% {{
+            }
+            100% {
                 opacity: 1;
                 transform: scale(1);
-            }}
-        }}
+            }
+        }
         
-        @keyframes slideInBottom {{
-            from {{
+        @keyframes slideInBottom {
+            from {
                 opacity: 0;
                 transform: translateY(60px);
-            }}
-            to {{
+            }
+            to {
                 opacity: 1;
                 transform: translateY(0);
-            }}
-        }}
+            }
+        }
         
         /* Animation Classes */
-        .animate-fade-up {{
+        .animate-fade-up {
             animation: fadeInUp 0.8s ease-out;
-        }}
+        }
         
-        .animate-fade-left {{
+        .animate-fade-left {
             animation: fadeInLeft 0.8s ease-out;
-        }}
+        }
         
-        .animate-fade-right {{
+        .animate-fade-right {
             animation: fadeInRight 0.8s ease-out;
-        }}
+        }
         
-        .animate-slide-top {{
+        .animate-slide-top {
             animation: slideInFromTop 0.6s ease-out;
-        }}
+        }
         
-        .animate-bounce-in {{
+        .animate-bounce-in {
             animation: bounceIn 0.8s ease-out;
-        }}
+        }
         
-        .animate-slide-bottom {{
+        .animate-slide-bottom {
             animation: slideInBottom 0.8s ease-out;
-        }}
+        }
         
         /* Hover Animations */
-        .hover-lift {{
+        .hover-lift {
             transition: all 0.3s ease;
-        }}
+        }
         
-        .hover-lift:hover {{
+        .hover-lift:hover {
             transform: translateY(-5px);
             box-shadow: 0 15px 40px rgba(0, 0, 0, 0.15);
-        }}
+        }
         
-        .hover-glow {{
+        .hover-glow {
             transition: all 0.3s ease;
-        }}
+        }
         
-        .hover-glow:hover {{
+        .hover-glow:hover {
             box-shadow: 0 0 30px rgba(102, 126, 234, 0.4);
             transform: scale(1.02);
-        }}
+        }
         
         /* Navigation Bar */
-        .nav-bar {{
+        .nav-bar {
             position: fixed;
             top: 0;
             left: 0;
@@ -591,31 +231,31 @@ def generate_html_report(analysis_result, token_parts):
             transform: translateY(-100%);
             animation: slideInFromTop 0.8s ease-out 0.5s forwards;
             border-bottom: 1px solid rgba(255, 255, 255, 0.2);
-        }}
+        }
         
-        .nav-content {{
+        .nav-content {
             max-width: 1400px;
             margin: 0 auto;
             display: flex;
             justify-content: space-between;
             align-items: center;
-        }}
+        }
         
-        .nav-title {{
+        .nav-title {
             font-weight: 700;
             color: #1e293b;
             font-size: 1.2em;
             background: linear-gradient(135deg, #667eea, #764ba2);
             -webkit-background-clip: text;
             -webkit-text-fill-color: transparent;
-        }}
+        }
         
-        .nav-links {{
+        .nav-links {
             display: flex;
             gap: 25px;
-        }}
+        }
         
-        .nav-link {{
+        .nav-link {
             color: #64748b;
             text-decoration: none;
             font-weight: 500;
@@ -623,15 +263,15 @@ def generate_html_report(analysis_result, token_parts):
             padding: 8px 15px;
             border-radius: 8px;
             position: relative;
-        }}
+        }
         
-        .nav-link:hover {{
+        .nav-link:hover {
             color: #667eea;
             background: rgba(102, 126, 234, 0.1);
             transform: translateY(-2px);
-        }}
+        }
         
-        .nav-link::after {{
+        .nav-link::after {
             content: '';
             position: absolute;
             width: 0;
@@ -640,15 +280,15 @@ def generate_html_report(analysis_result, token_parts):
             left: 50%;
             background: linear-gradient(90deg, #667eea, #764ba2);
             transition: all 0.3s ease;
-        }}
+        }
         
-        .nav-link:hover::after {{
+        .nav-link:hover::after {
             width: 100%;
             left: 0;
-        }}
+        }
         
         /* Executive Summary Enhancements */
-        .executive-summary {{
+        .executive-summary {
             background: rgba(255, 255, 255, 0.95);
             backdrop-filter: blur(10px);
             border-radius: 20px;
@@ -656,68 +296,68 @@ def generate_html_report(analysis_result, token_parts):
             margin-bottom: 30px;
             box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
             border: 1px solid rgba(255,255,255,0.2);
-        }}
+        }
         
-        .executive-content {{
+        .executive-content {
             display: grid;
             grid-template-columns: 2fr 1fr;
             gap: 30px;
             margin-bottom: 30px;
-        }}
+        }
         
-        .risk-overview h3, .key-recommendations h3 {{
+        .risk-overview h3, .key-recommendations h3 {
             color: #1e293b;
             margin-bottom: 15px;
             font-size: 1.3em;
             font-weight: 700;
-        }}
+        }
         
-        .risk-level-critical {{
+        .risk-level-critical {
             color: #dc2626;
             background: linear-gradient(135deg, #fef2f2, #fee2e2);
             padding: 4px 12px;
             border-radius: 6px;
             font-weight: 700;
-        }}
+        }
         
-        .risk-level-high {{
+        .risk-level-high {
             color: #ea580c;
             background: linear-gradient(135deg, #fff7ed, #fed7aa);
             padding: 4px 12px;
             border-radius: 6px;
             font-weight: 700;
-        }}
+        }
         
-        .risk-level-medium {{
+        .risk-level-medium {
             color: #d97706;
             background: linear-gradient(135deg, #fffbeb, #fde68a);
             padding: 4px 12px;
             border-radius: 6px;
             font-weight: 700;
-        }}
+        }
         
-        .risk-level-low {{
+        .risk-level-low {
             color: #059669;
             background: linear-gradient(135deg, #f0fdf4, #bbf7d0);
             padding: 4px 12px;
             border-radius: 6px;
             font-weight: 700;
-        }}
+        }
         
-        .compliance-status {{
+        .compliance-status {
             background: linear-gradient(135deg, #f8fafc, #e2e8f0);
             border-radius: 12px;
             padding: 20px;
             margin-top: 20px;
-        }}
+        }
         
-        .compliance-grid {{
+        .compliance-grid {
             display: grid;
             gap: 15px;
             margin-top: 15px;
-        }}
+        }
         
-        .compliance-item {{
+        .compliance-item {
             display: flex;
             align-items: center;
             gap: 10px;
@@ -725,154 +365,154 @@ def generate_html_report(analysis_result, token_parts):
             background: white;
             border-radius: 8px;
             box-shadow: 0 2px 8px rgba(0,0,0,0.1);
-        }}
+        }
         
-        .recommendation-list {{
+        .recommendation-list {
             list-style: none;
             padding: 0;
-        }}
+        }
         
-        .recommendation-list li {{
+        .recommendation-list li {
             padding: 8px 0;
             display: flex;
             align-items: center;
             gap: 10px;
-        }}
+        }
         
-        .meta-info {{
+        .meta-info {
             display: flex;
             justify-content: center;
             gap: 30px;
             margin: 20px 0;
             flex-wrap: wrap;
-        }}
+        }
         
-        .meta-item {{
+        .meta-item {
             display: flex;
             align-items: center;
             gap: 8px;
             color: #64748b;
             font-weight: 500;
-        }}
+        }
         
         /* Cipher Analysis Styles */
-        .cipher-grid {{
+        .cipher-grid {
             display: grid;
             grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
             gap: 20px;
             margin: 20px 0;
-        }}
+        }
         
-        .cipher-detail-card {{
+        .cipher-detail-card {
             background: linear-gradient(135deg, #f8fafc, #e2e8f0);
             border-radius: 12px;
             padding: 20px;
             border-left: 4px solid #667eea;
             transition: all 0.3s ease;
-        }}
+        }
         
-        .cipher-detail-card:hover {{
+        .cipher-detail-card:hover {
             transform: translateY(-3px);
             box-shadow: 0 10px 25px rgba(0,0,0,0.1);
-        }}
+        }
         
-        .cipher-detail-card h4 {{
+        .cipher-detail-card h4 {
             color: #1e293b;
             margin-bottom: 10px;
             font-size: 1.1em;
-        }}
+        }
         
-        .cipher-value {{
+        .cipher-value {
             font-size: 1.3em;
             font-weight: 700;
             color: #667eea;
             margin-bottom: 8px;
-        }}
+        }
         
-        .cipher-description {{
+        .cipher-description {
             color: #64748b;
             font-size: 0.9em;
             line-height: 1.5;
-        }}
+        }
         
-        .security-level-critical {{
+        .security-level-critical {
             color: #dc2626 !important;
-        }}
+        }
         
-        .security-level-high {{
+        .security-level-high {
             color: #ea580c !important;
-        }}
+        }
         
-        .security-level-medium {{
+        .security-level-medium {
             color: #d97706 !important;
-        }}
+        }
         
-        .security-level-low {{
+        .security-level-low {
             color: #059669 !important;
-        }}
+        }
         
-        .vulnerability-assessment {{
+        .vulnerability-assessment {
             margin-top: 30px;
-        }}
+        }
         
-        .vuln-matrix {{
+        .vuln-matrix {
             display: grid;
             gap: 15px;
             margin-top: 20px;
-        }}
+        }
         
-        .vuln-item {{
+        .vuln-item {
             background: white;
             border-radius: 10px;
             padding: 15px;
             border-left: 4px solid;
             transition: all 0.3s ease;
-        }}
+        }
         
-        .vuln-item.pass {{
+        .vuln-item.pass {
             border-left-color: #059669;
             background: linear-gradient(135deg, #f0fdf4, #dcfce7);
-        }}
+        }
         
-        .vuln-item.fail {{
+        .vuln-item.fail {
             border-left-color: #dc2626;
             background: linear-gradient(135deg, #fef2f2, #fee2e2);
-        }}
+        }
         
-        .vuln-item.warning {{
+        .vuln-item.warning {
             border-left-color: #d97706;
             background: linear-gradient(135deg, #fffbeb, #fde68a);
-        }}
+        }
         
-        .vuln-item:hover {{
+        .vuln-item:hover {
             transform: translateX(5px);
             box-shadow: 0 5px 15px rgba(0,0,0,0.1);
-        }}
+        }
         
-        .vuln-header {{
+        .vuln-header {
             display: flex;
             align-items: center;
             gap: 10px;
             font-weight: 600;
             margin-bottom: 8px;
-        }}
+        }
         
-        .vuln-description {{
+        .vuln-description {
             color: #64748b;
             font-size: 0.9em;
-        }}
+        }
         
-        .vuln-details {{
+        .vuln-details {
             margin-top: 8px;
             padding: 10px;
             background: rgba(255,255,255,0.7);
             border-radius: 6px;
             font-size: 0.85em;
             color: #374151;
-        }}
+        }
         
         /* Header Section */
-        .header {{
+        .header {
             background: linear-gradient(135deg, rgba(255,255,255,0.95) 0%, rgba(248,250,252,0.95) 100%);
             backdrop-filter: blur(15px);
             border-radius: 20px;
@@ -881,9 +521,9 @@ def generate_html_report(analysis_result, token_parts):
             text-align: center;
             box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
             border: 1px solid rgba(255,255,255,0.2);
-        }}
+        }
         
-        .header h1 {{
+        .header h1 {
             background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
             -webkit-background-clip: text;
             -webkit-text-fill-color: transparent;
@@ -892,16 +532,16 @@ def generate_html_report(analysis_result, token_parts):
             margin-bottom: 15px;
             font-weight: 800;
             text-shadow: 2px 2px 4px rgba(0,0,0,0.1);
-        }}
+        }
         
-        .header .subtitle {{
+        .header .subtitle {
             color: #64748b;
             font-size: 1.3em;
             margin-bottom: 25px;
             font-weight: 500;
-        }}
+        }
         
-        .security-badge {{
+        .security-badge {
             display: inline-flex;
             align-items: center;
             gap: 8px;
@@ -911,75 +551,75 @@ def generate_html_report(analysis_result, token_parts):
             border-radius: 25px;
             font-weight: 600;
             box-shadow: 0 4px 15px rgba(16, 185, 129, 0.3);
-        }}
+        }
         
         /* Executive Summary */
-        .executive-summary {{
+        .executive-summary {
             background: linear-gradient(135deg, rgba(255,255,255,0.95) 0%, rgba(248,250,252,0.95) 100%);
             backdrop-filter: blur(10px);
             border-radius: 15px;
             padding: 30px;
             margin-bottom: 30px;
             box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
-        }}
+        }
         
-        .summary-grid {{
+        .summary-grid {
             display: grid;
             grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
             gap: 20px;
             margin-top: 20px;
-        }}
+        }
         
-        .summary-card {{
+        .summary-card {
             background: linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%);
             border-radius: 12px;
             padding: 20px;
             text-align: center;
             border-left: 4px solid;
             transition: transform 0.3s ease;
-        }}
+        }
         
-        .summary-card:hover {{
+        .summary-card:hover {
             transform: translateY(-5px);
-        }}
+        }
         
-        .summary-card.critical {{
+        .summary-card.critical {
             border-left-color: #dc2626;
             background: linear-gradient(135deg, #fef2f2 0%, #fee2e2 100%);
-        }}
+        }
         
-        .summary-card.high {{
+        .summary-card.high {
             border-left-color: #ea580c;
             background: linear-gradient(135deg, #fff7ed 0%, #fed7aa 100%);
-        }}
+        }
         
-        .summary-card.medium {{
+        .summary-card.medium {
             border-left-color: #d97706;
             background: linear-gradient(135deg, #fffbeb 0%, #fde68a 100%);
-        }}
+        }
         
-        .summary-card.low {{
+        .summary-card.low {
             border-left-color: #059669;
             background: linear-gradient(135deg, #f0fdf4 0%, #bbf7d0 100%);
-        }}
+        }
         
-        .summary-number {{
+        .summary-number {
             font-size: 2.5em;
             font-weight: 800;
             margin-bottom: 5px;
             display: block;
-        }}
+        }
         
-        .summary-label {{
+        .summary-label {
             font-weight: 600;
             color: #64748b;
             font-size: 0.9em;
             text-transform: uppercase;
             letter-spacing: 1px;
-        }}
+        }
         
         /* Report Cards */
-        .report-card {{
+        .report-card {
             background: rgba(255, 255, 255, 0.95);
             backdrop-filter: blur(10px);
             border-radius: 15px;
@@ -987,9 +627,9 @@ def generate_html_report(analysis_result, token_parts):
             overflow: hidden;
             box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
             border: 1px solid rgba(255,255,255,0.2);
-        }}
+        }
         
-        .card-header {{
+        .card-header {
             background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
             color: white;
             padding: 20px 30px;
@@ -998,38 +638,38 @@ def generate_html_report(analysis_result, token_parts):
             display: flex;
             align-items: center;
             gap: 10px;
-        }}
+        }
         
-        .card-body {{
+        .card-body {
             padding: 30px;
-        }}
+        }
         
         /* JWT Parts Styling */
-        .jwt-parts {{
+        .jwt-parts {
             display: grid;
             gap: 20px;
-        }}
+        }
         
-        .jwt-part {{
+        .jwt-part {
             background: linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%);
             border-radius: 12px;
             padding: 20px;
             border-left: 5px solid;
-        }}
+        }
         
-        .jwt-part.header {{
+        .jwt-part.header {
             border-left-color: #3b82f6;
-        }}
+        }
         
-        .jwt-part.payload {{
+        .jwt-part.payload {
             border-left-color: #10b981;
-        }}
+        }
         
-        .jwt-part.signature {{
+        .jwt-part.signature {
             border-left-color: #8b5cf6;
-        }}
+        }
         
-        .jwt-part-title {{
+        .jwt-part-title {
             font-size: 1.2em;
             font-weight: 700;
             margin-bottom: 15px;
@@ -1037,9 +677,9 @@ def generate_html_report(analysis_result, token_parts):
             display: flex;
             align-items: center;
             gap: 8px;
-        }}
+        }
         
-        .code-block {{
+        .code-block {
             background: #1e293b;
             color: #e2e8f0;
             padding: 20px;
@@ -1051,51 +691,51 @@ def generate_html_report(analysis_result, token_parts):
             word-break: break-all;
             margin-bottom: 15px;
             box-shadow: inset 0 2px 4px rgba(0,0,0,0.2);
-        }}
+        }
         
         /* Security Issues */
-        .risk-item {{
+        .risk-item {
             background: white;
             border-radius: 12px;
             margin-bottom: 20px;
             overflow: hidden;
             box-shadow: 0 4px 12px rgba(0,0,0,0.1);
-        }}
+        }
         
-        .risk-header {{
+        .risk-header {
             padding: 20px;
             display: flex;
             justify-content: space-between;
             align-items: center;
             font-weight: 700;
             border-left: 5px solid;
-        }}
+        }
         
-        .risk-header.critical {{
+        .risk-header.critical {
             background: linear-gradient(135deg, #fef2f2 0%, #fee2e2 100%);
             border-left-color: #dc2626;
             color: #7f1d1d;
-        }}
+        }
         
-        .risk-header.high {{
+        .risk-header.high {
             background: linear-gradient(135deg, #fff7ed 0%, #fed7aa 100%);
             border-left-color: #ea580c;
             color: #9a3412;
-        }}
+        }
         
-        .risk-header.medium {{
+        .risk-header.medium {
             background: linear-gradient(135deg, #fffbeb 0%, #fde68a 100%);
             border-left-color: #d97706;
             color: #92400e;
-        }}
+        }
         
-        .risk-header.low {{
+        .risk-header.low {
             background: linear-gradient(135deg, #f0fdf4 0%, #bbf7d0 100%);
             border-left-color: #059669;
             color: #065f46;
-        }}
+        }
         
-        .severity-badge {{
+        .severity-badge {
             padding: 8px 16px;
             border-radius: 20px;
             font-size: 0.8em;
@@ -1104,18 +744,18 @@ def generate_html_report(analysis_result, token_parts):
             display: flex;
             align-items: center;
             gap: 5px;
-        }}
+        }
         
-        .risk-content {{
+        .risk-content {
             padding: 25px;
             background: white;
-        }}
+        }
         
-        .risk-section {{
+        .risk-section {
             margin-bottom: 20px;
-        }}
+        }
         
-        .risk-section-title {{
+        .risk-section-title {
             font-weight: bold;
             color: #374151;
             margin-bottom: 10px;
@@ -1123,38 +763,38 @@ def generate_html_report(analysis_result, token_parts):
             display: flex;
             align-items: center;
             gap: 8px;
-        }}
+        }
         
-        .risk-description {{
+        .risk-description {
             color: #6b7280;
             line-height: 1.8;
             margin-bottom: 15px;
-        }}
+        }
         
-        .technical-details {{
+        .technical-details {
             background: linear-gradient(135deg, #f0f9ff 0%, #e0f2fe 100%);
             border-left: 4px solid #0ea5e9;
             padding: 20px;
             border-radius: 8px;
             margin: 15px 0;
-        }}
+        }
         
-        .technical-details strong {{
+        .technical-details strong {
             color: #0c4a6e;
-        }}
+        }
         
-        .technical-details ul {{
+        .technical-details ul {
             margin-top: 10px;
             padding-left: 20px;
-        }}
+        }
         
-        .technical-details li {{
+        .technical-details li {
             margin-bottom: 8px;
             color: #1e40af;
-        }}
+        }
         
         /* Token Visualization */
-        .section-title {{
+        .section-title {
             font-size: 1.4em;
             font-weight: 700;
             color: #1e293b;
@@ -1162,9 +802,9 @@ def generate_html_report(analysis_result, token_parts):
             display: flex;
             align-items: center;
             gap: 10px;
-        }}
+        }
         
-        .token-visual {{
+        .token-visual {
             background: #1e293b;
             color: #e2e8f0;
             padding: 20px;
@@ -1175,92 +815,92 @@ def generate_html_report(analysis_result, token_parts):
             word-break: break-all;
             margin-bottom: 25px;
             box-shadow: inset 0 2px 4px rgba(0,0,0,0.2);
-        }}
+        }
         
-        .token-part-highlight {{
+        .token-part-highlight {
             padding: 2px 4px;
             border-radius: 4px;
             font-weight: 600;
-        }}
+        }
         
-        .header-part {{
+        .header-part {
             background: rgba(59, 130, 246, 0.3);
             border: 1px solid #3b82f6;
-        }}
+        }
         
-        .payload-part {{
+        .payload-part {
             background: rgba(16, 185, 129, 0.3);
             border: 1px solid #10b981;
-        }}
+        }
         
-        .signature-part {{
+        .signature-part {
             background: rgba(139, 92, 246, 0.3);
             border: 1px solid #8b5cf6;
-        }}
+        }
         
-        .jwt-structure {{
+        .jwt-structure {
             display: grid;
             gap: 25px;
-        }}
+        }
         
         /* Vulnerability Matrix */
-        .vulnerability-grid {{
+        .vulnerability-grid {
             display: grid;
             grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
             gap: 20px;
             margin-top: 20px;
-        }}
+        }
         
-        .vuln-item {{
+        .vuln-item {
             background: white;
             border-radius: 12px;
             padding: 20px;
             border-left: 5px solid;
             box-shadow: 0 4px 12px rgba(0,0,0,0.1);
-        }}
+        }
         
-        .vuln-item.pass {{
+        .vuln-item.pass {
             border-left-color: #10b981;
             background: linear-gradient(135deg, #f0fdf4 0%, #dcfce7 100%);
-        }}
+        }
         
-        .vuln-item.fail {{
+        .vuln-item.fail {
             border-left-color: #dc2626;
             background: linear-gradient(135deg, #fef2f2 0%, #fee2e2 100%);
-        }}
+        }
         
-        .vuln-item.warning {{
+        .vuln-item.warning {
             border-left-color: #f59e0b;
             background: linear-gradient(135deg, #fffbeb 0%, #fef3c7 100%);
-        }}
+        }
         
-        .vuln-title {{
+        .vuln-title {
             font-weight: 700;
             margin-bottom: 10px;
             display: flex;
             align-items: center;
             gap: 10px;
-        }}
+        }
         
         /* FAQ Section */
-        .faq-section {{
+        .faq-section {
             background: linear-gradient(135deg, rgba(255,255,255,0.95) 0%, rgba(248,250,252,0.95) 100%);
             backdrop-filter: blur(10px);
             border-radius: 15px;
             padding: 30px;
             margin-bottom: 30px;
             box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
-        }}
+        }
         
-        .faq-item {{
+        .faq-item {
             background: white;
             border-radius: 10px;
             margin-bottom: 15px;
             overflow: hidden;
             box-shadow: 0 2px 8px rgba(0,0,0,0.1);
-        }}
+        }
         
-        .faq-question {{
+        .faq-question {
             background: linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%);
             padding: 20px;
             font-weight: 700;
@@ -1269,49 +909,49 @@ def generate_html_report(analysis_result, token_parts):
             display: flex;
             align-items: center;
             gap: 10px;
-        }}
+        }
         
-        .faq-answer {{
+        .faq-answer {
             padding: 20px;
             color: #64748b;
             line-height: 1.8;
-        }}
+        }
         
-        .faq-answer ul {{
+        .faq-answer ul {
             margin-top: 10px;
             padding-left: 20px;
-        }}
+        }
         
-        .faq-answer li {{
+        .faq-answer li {
             margin-bottom: 8px;
-        }}
+        }
         
         /* Recommendations */
-        .recommendations {{
+        .recommendations {
             background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
             color: white;
             padding: 30px;
             border-radius: 15px;
             margin: 30px 0;
-        }}
+        }
         
-        .recommendations h3 {{
+        .recommendations h3 {
             margin-bottom: 20px;
             display: flex;
             align-items: center;
             gap: 10px;
-        }}
+        }
         
-        .recommendation-item {{
+        .recommendation-item {
             background: rgba(255,255,255,0.1);
             padding: 15px;
             border-radius: 8px;
             margin-bottom: 15px;
             border-left: 4px solid rgba(255,255,255,0.3);
-        }}
+        }
         
         /* Footer */
-        .footer {{
+        .footer {
             text-align: center;
             padding: 30px;
             background: rgba(255, 255, 255, 0.95);
@@ -1319,185 +959,185 @@ def generate_html_report(analysis_result, token_parts):
             border-radius: 15px;
             margin-top: 30px;
             color: #64748b;
-        }}
+        }
         
-        .footer p {{
+        .footer p {
             margin-bottom: 5px;
-        }}
+        }
         
         /* Icons */
-        .icon {{
+        .icon {
             width: 20px;
             height: 20px;
             display: inline-flex;
             align-items: center;
             justify-content: center;
-        }}
+        }
         
         /* Responsive Design */
-        @media (max-width: 768px) {{
-            .container {{
+        @media (max-width: 768px) {
+            .container {
                 padding: 10px;
-            }}
+            }
             
-            .header h1 {{
+            .header h1 {
                 font-size: 2em;
-            }}
+            }
             
-            .summary-grid {{
+            .summary-grid {
                 grid-template-columns: 1fr;
-            }}
+            }
             
-            .vulnerability-grid {{
+            .vulnerability-grid {
                 grid-template-columns: 1fr;
-            }}
-        }}
+            }
+        }
         
-        .scan-info {{
+        .scan-info {
             display: grid;
             grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
             gap: 20px;
             margin-top: 20px;
-        }}
+        }
         
-        .scan-info-item {{
+        .scan-info-item {
             background: #f8f9fa;
             padding: 15px;
             border-radius: 8px;
             text-align: center;
-        }}
+        }
         
-        .scan-info-item .label {{
+        .scan-info-item .label {
             font-weight: bold;
             color: #495057;
             margin-bottom: 5px;
-        }}
+        }
         
-        .scan-info-item .value {{
+        .scan-info-item .value {
             color: #007bff;
             font-weight: 600;
-        }}
+        }
         
-        .report-card {{
+        .report-card {
             background: rgba(255, 255, 255, 0.95);
             backdrop-filter: blur(10px);
             border-radius: 15px;
             box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
             margin-bottom: 30px;
             overflow: hidden;
-        }}
+        }
         
-        .card-header {{
+        .card-header {
             background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
             color: white;
             padding: 20px 30px;
             font-size: 1.3em;
             font-weight: 600;
-        }}
+        }
         
-        .card-body {{
+        .card-body {
             padding: 30px;
-        }}
+        }
         
-        .summary-grid {{
+        .summary-grid {
             display: grid;
             grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
             gap: 20px;
             margin-bottom: 30px;
-        }}
+        }
         
-        .summary-card {{
+        .summary-card {
             text-align: center;
             padding: 25px;
             border-radius: 12px;
             color: white;
             font-weight: bold;
-        }}
+        }
         
-        .summary-card.critical {{
+        .summary-card.critical {
             background: linear-gradient(135deg, #ff416c 0%, #ff4757 100%);
-        }}
+        }
         
-        .summary-card.high {{
+        .summary-card.high {
             background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
-        }}
+        }
         
-        .summary-card.medium {{
+        .summary-card.medium {
             background: linear-gradient(135deg, #ffecd2 0%, #fcb69f 100%);
             color: #333;
-        }}
+        }
         
-        .summary-card.low {{
+        .summary-card.low {
             background: linear-gradient(135deg, #a8edea 0%, #fed6e3 100%);
             color: #333;
-        }}
+        }
         
-        .summary-card.info {{
+        .summary-card.info {
             background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-        }}
+        }
         
-        .summary-number {{
+        .summary-number {
             font-size: 2.5em;
             display: block;
             margin-bottom: 5px;
-        }}
+        }
         
-        .summary-label {{
+        .summary-label {
             font-size: 0.9em;
             opacity: 0.9;
-        }}
+        }
         
-        .technical-section {{
+        .technical-section {
             margin: 25px 0;
-        }}
+        }
         
-        .section-title {{
+        .section-title {
             color: #2c3e50;
             font-size: 1.4em;
             font-weight: 600;
             margin-bottom: 15px;
             padding-bottom: 8px;
             border-bottom: 3px solid #667eea;
-        }}
+        }
         
-        .jwt-structure {{
+        .jwt-structure {
             background: #f8f9fa;
             border-radius: 10px;
             padding: 20px;
             margin: 20px 0;
             border-left: 5px solid #007bff;
-        }}
+        }
         
-        .jwt-part {{
+        .jwt-part {
             margin-bottom: 15px;
             padding: 15px;
             border-radius: 8px;
             border: 1px solid #dee2e6;
-        }}
+        }
         
-        .jwt-part.header {{
+        .jwt-part.header {
             background: #e3f2fd;
             border-left: 4px solid #2196f3;
-        }}
+        }
         
-        .jwt-part.payload {{
+        .jwt-part.payload {
             background: #f3e5f5;
             border-left: 4px solid #9c27b0;
-        }}
+        }
         
-        .jwt-part.signature {{
+        .jwt-part.signature {
             background: #e8f5e8;
             border-left: 4px solid #4caf50;
-        }}
+        }
         
-        .jwt-part-title {{
+        .jwt-part-title {
             font-weight: bold;
             color: #333;
             margin-bottom: 10px;
             font-size: 1.1em;
-        }}
+        }
         
-        .code-block {{
+        .code-block {
             background: #2d3748;
             color: #e2e8f0;
             padding: 20px;
@@ -1507,228 +1147,228 @@ def generate_html_report(analysis_result, token_parts):
             font-size: 0.9em;
             line-height: 1.5;
             margin: 10px 0;
-        }}
+        }
         
-        .risk-assessment {{
+        .risk-assessment {
             margin: 20px 0;
-        }}
+        }
         
-        .risk-item {{
+        .risk-item {
             border: 1px solid #dee2e6;
             border-radius: 10px;
             margin-bottom: 20px;
             overflow: hidden;
             box-shadow: 0 2px 8px rgba(0,0,0,0.1);
-        }}
+        }
         
-        .risk-header {{
+        .risk-header {
             padding: 15px 20px;
             font-weight: bold;
             color: white;
             display: flex;
             align-items: center;
             justify-content: space-between;
-        }}
+        }
         
-        .risk-header.critical {{
+        .risk-header.critical {
             background: linear-gradient(135deg, #ff416c 0%, #ff4757 100%);
-        }}
+        }
         
-        .risk-header.high {{
+        .risk-header.high {
             background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
-        }}
+        }
         
-        .risk-header.medium {{
+        .risk-header.medium {
             background: linear-gradient(135deg, #ffecd2 0%, #fcb69f 100%);
             color: #333;
-        }}
+        }
         
-        .risk-header.low {{
+        .risk-header.low {
             background: linear-gradient(135deg, #a8edea 0%, #fed6e3 100%);
             color: #333;
-        }}
+        }
         
-        .risk-header.info {{
+        .risk-header.info {
             background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-        }}
+        }
         
-        .severity-badge {{
+        .severity-badge {
             padding: 5px 15px;
             border-radius: 20px;
             font-size: 0.8em;
             font-weight: bold;
             background: rgba(255,255,255,0.2);
-        }}
+        }
         
-        .risk-content {{
+        .risk-content {
             padding: 20px;
             background: white;
-        }}
+        }
         
-        .risk-section {{
+        .risk-section {
             margin-bottom: 15px;
-        }}
+        }
         
-        .risk-section-title {{
+        .risk-section-title {
             font-weight: bold;
             color: #495057;
             margin-bottom: 8px;
             font-size: 1.1em;
-        }}
+        }
         
-        .risk-description {{
+        .risk-description {
             color: #666;
             line-height: 1.6;
-        }}
+        }
         
-        .risk-impact {{
+        .risk-impact {
             background: #fff5f5;
             border-left: 4px solid #e53e3e;
             padding: 15px;
             border-radius: 0 8px 8px 0;
             margin: 10px 0;
-        }}
+        }
         
-        .risk-mitigation {{
+        .risk-mitigation {
             background: #f0fff4;
             border-left: 4px solid #38a169;
             padding: 15px;
             border-radius: 0 8px 8px 0;
             margin: 10px 0;
-        }}
+        }
         
-        .technical-details {{
+        .technical-details {
             background: #f8f9ff;
             border-left: 4px solid #667eea;
             padding: 15px;
             border-radius: 0 8px 8px 0;
             margin: 10px 0;
-        }}
+        }
         
-        .table-container {{
+        .table-container {
             overflow-x: auto;
             margin: 20px 0;
-        }}
+        }
         
-        table {{
+        table {
             width: 100%;
             border-collapse: collapse;
             background: white;
             border-radius: 8px;
             overflow: hidden;
             box-shadow: 0 2px 8px rgba(0,0,0,0.1);
-        }}
+        }
         
-        th {{
+        th {
             background: #667eea;
             color: white;
             padding: 15px;
             text-align: left;
             font-weight: 600;
-        }}
+        }
         
-        td {{
+        td {
             padding: 12px 15px;
             border-bottom: 1px solid #eee;
-        }}
+        }
         
-        tr:hover {{
+        tr:hover {
             background: #f8f9fa;
-        }}
+        }
         
-        .algorithm-details {{
+        .algorithm-details {
             background: #fff8e1;
             border: 1px solid #ffcc02;
             border-radius: 8px;
             padding: 20px;
             margin: 20px 0;
-        }}
+        }
         
-        .algorithm-title {{
+        .algorithm-title {
             font-weight: bold;
             color: #ff8f00;
             margin-bottom: 10px;
             font-size: 1.2em;
-        }}
+        }
         
-        .recommendations {{
+        .recommendations {
             background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
             color: white;
             padding: 25px;
             border-radius: 12px;
             margin: 20px 0;
-        }}
+        }
         
-        .recommendations h3 {{
+        .recommendations h3 {
             margin-bottom: 15px;
             font-size: 1.3em;
-        }}
+        }
         
-        .recommendations ul {{
+        .recommendations ul {
             list-style: none;
             padding: 0;
-        }}
+        }
         
-        .recommendations li {{
+        .recommendations li {
             padding: 8px 0;
             padding-left: 25px;
             position: relative;
-        }}
+        }
         
-        .recommendations li:before {{
+        .recommendations li:before {
             content: "✓";
             position: absolute;
             left: 0;
             color: #4ade80;
             font-weight: bold;
-        }}
+        }
         
-        .vulnerability-matrix {{
+        .vulnerability-matrix {
             display: grid;
             grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
             gap: 20px;
             margin: 20px 0;
-        }}
+        }
         
-        .vulnerability-card {{
+        .vulnerability-card {
             background: white;
             border-radius: 8px;
             padding: 20px;
             box-shadow: 0 2px 8px rgba(0,0,0,0.1);
             border-top: 4px solid #667eea;
-        }}
+        }
         
-        .vulnerability-title {{
+        .vulnerability-title {
             font-weight: bold;
             color: #2c3e50;
             margin-bottom: 10px;
-        }}
+        }
         
-        .vulnerability-status {{
+        .vulnerability-status {
             display: inline-block;
             padding: 4px 12px;
             border-radius: 20px;
             font-size: 0.8em;
             font-weight: bold;
             margin-top: 10px;
-        }}
+        }
         
-        .status-pass {{
+        .status-pass {
             background: #d4edda;
             color: #155724;
-        }}
+        }
         
-        .status-fail {{
+        .status-fail {
             background: #f8d7da;
             color: #721c24;
-        }}
+        }
         
-        .status-warning {{
+        .status-warning {
             background: #fff3cd;
             color: #856404;
-        }}
+        }
         
-        .footer {{
+        .footer {
             background: rgba(255, 255, 255, 0.95);
             backdrop-filter: blur(10px);
             border-radius: 15px;
@@ -1736,9 +1376,9 @@ def generate_html_report(analysis_result, token_parts):
             text-align: center;
             color: #666;
             margin-top: 30px;
-        }}
+        }
         
-        .token-visual {{
+        .token-visual {
             font-family: monospace;
             background: #2d3748;
             color: #e2e8f0;
@@ -1747,64 +1387,64 @@ def generate_html_report(analysis_result, token_parts):
             word-break: break-all;
             margin: 15px 0;
             position: relative;
-        }}
+        }
         
-        .token-part-highlight {{
+        .token-part-highlight {
             position: relative;
             display: inline;
-        }}
+        }
         
-        .token-part-highlight.header-part {{
+        .token-part-highlight.header-part {
             background: rgba(33, 150, 243, 0.3);
-        }}
+        }
         
-        .token-part-highlight.payload-part {{
+        .token-part-highlight.payload-part {
             background: rgba(156, 39, 176, 0.3);
-        }}
+        }
         
-        .token-part-highlight.signature-part {{
+        .token-part-highlight.signature-part {
             background: rgba(76, 175, 80, 0.3);
-        }}
+        }
         
-        .cvss-score {{
+        .cvss-score {
             display: inline-block;
             padding: 8px 16px;
             border-radius: 20px;
             font-weight: bold;
             color: white;
             margin: 5px 0;
-        }}
+        }
         
-        .cvss-low {{
+        .cvss-low {
             background: #28a745;
-        }}
+        }
         
-        .cvss-medium {{
+        .cvss-medium {
             background: #ffc107;
             color: #333;
-        }}
+        }
         
-        .cvss-high {{
+        .cvss-high {
             background: #fd7e14;
-        }}
+        }
         
-        .cvss-critical {{
+        .cvss-critical {
             background: #dc3545;
-        }}
+        }
         
-        @media (max-width: 768px) {{
-            .summary-grid {{
+        @media (max-width: 768px) {
+            .summary-grid {
                 grid-template-columns: 1fr;
-            }}
+            }
             
-            .header h1 {{
+            .header h1 {
                 font-size: 2em;
-            }}
+            }
             
-            .container {{
+            .container {
                 padding: 10px;
-            }}
-        }}
+            }
+        }
     </style>
 </head>
 <body>
@@ -1828,7 +1468,7 @@ def generate_html_report(analysis_result, token_parts):
     </nav>
     
     <!-- Scroll to Top Button -->
-    <button class="scroll-to-top" onclick="window.scrollTo({{top: 0, behavior: 'smooth'}})">
+    <button class="scroll-to-top" onclick="window.scrollTo({top: 0, behavior: 'smooth'})">
         <i class="fas fa-arrow-up"></i>
     </button>
     
@@ -1840,15 +1480,15 @@ def generate_html_report(analysis_result, token_parts):
             <div class="meta-info">
                 <div class="meta-item">
                     <i class="fas fa-calendar-alt"></i>
-                    <span>Analysis Date: {timestamp}</span>
+                    <span>Analysis Date: August 30, 2025</span>
                 </div>
                 <div class="meta-item">
                     <i class="fas fa-ruler"></i>
-                    <span>Token Size: {analysis_result.get('token_size', 'Unknown')} characters</span>
+                    <span>Token Size: 64 characters</span>
                 </div>
                 <div class="meta-item">
                     <i class="fas fa-shield-virus"></i>
-                    <span>Algorithm: {analysis_result['header'].get('alg', 'Unknown')}</span>
+                    <span>Algorithm: none</span>
                 </div>
             </div>
             <div class="security-badge">
@@ -1863,23 +1503,23 @@ def generate_html_report(analysis_result, token_parts):
             <div class="executive-content">
                 <div class="risk-overview">
                     <h3><i class="fas fa-bullseye"></i> Risk Assessment Overview</h3>
-                    <p>The analyzed JWT token presents a <strong class="risk-level-{analysis_result.get('overall_risk', 'medium').lower()}">{analysis_result.get('overall_risk', 'MEDIUM')}</strong> security risk profile. 
-                    While the token uses {analysis_result['header'].get('alg', 'Unknown')} signature algorithm, several security best practices require immediate attention.</p>
+                    <p>The analyzed JWT token presents a <strong class="risk-level-medium">MEDIUM</strong> security risk profile. 
+                    While the token uses none signature algorithm, several security best practices require immediate attention.</p>
                     
                     <div class="compliance-status">
                         <h4><i class="fas fa-certificate"></i> Compliance Status</h4>
                         <div class="compliance-grid">
                             <div class="compliance-item">
                                 <i class="fas fa-shield-alt"></i>
-                                <span>OWASP JWT Security: {'PARTIAL' if len([i for i in analysis_result['security_issues'] if i['severity'] in ['critical', 'high']]) > 0 else 'COMPLIANT'}</span>
+                                <span>OWASP JWT Security: COMPLIANT</span>
                             </div>
                             <div class="compliance-item">
                                 <i class="fas fa-lock"></i>
-                                <span>Industry Standards: {'NEEDS REVIEW' if analysis_result['severity_counts']['medium'] > 0 else 'COMPLIANT'}</span>
+                                <span>Industry Standards: NEEDS REVIEW</span>
                             </div>
                             <div class="compliance-item">
                                 <i class="fas fa-user-shield"></i>
-                                <span>Best Practices: {'PARTIAL' if len(analysis_result['security_issues']) > 0 else 'FULL'}</span>
+                                <span>Best Practices: PARTIAL</span>
                             </div>
                         </div>
                     </div>
@@ -1888,34 +1528,34 @@ def generate_html_report(analysis_result, token_parts):
                 <div class="key-recommendations">
                     <h3><i class="fas fa-lightbulb"></i> Key Recommendations</h3>
                     <ul class="recommendation-list">
-                        {''.join(f'<li><i class="fas fa-arrow-right"></i> {rec}</li>' for rec in analysis_result.get('algorithm_analysis', {}).get('recommendations', ['Review token configuration'])[:3])}
+                        
                     </ul>
                 </div>
             </div>
                         <div class="summary-grid">
                     <div class="summary-card critical animate-bounce-in">
                         <i class="fas fa-exclamation-triangle" style="font-size: 1.5em; color: #dc2626; margin-bottom: 10px;"></i>
-                        <span class="summary-number">{analysis_result['severity_counts']['critical']}</span>
+                        <span class="summary-number">0</span>
                         <span class="summary-label">Critical Risks</span>
                     </div>
                     <div class="summary-card high animate-bounce-in" style="animation-delay: 0.1s;">
                         <i class="fas fa-fire" style="font-size: 1.5em; color: #ea580c; margin-bottom: 10px;"></i>
-                        <span class="summary-number">{analysis_result['severity_counts']['high']}</span>
+                        <span class="summary-number">0</span>
                         <span class="summary-label">High Risks</span>
                     </div>
                     <div class="summary-card medium animate-bounce-in" style="animation-delay: 0.2s;">
                         <i class="fas fa-exclamation-circle" style="font-size: 1.5em; color: #d97706; margin-bottom: 10px;"></i>
-                        <span class="summary-number">{analysis_result['severity_counts']['medium']}</span>
+                        <span class="summary-number">2</span>
                         <span class="summary-label">Medium Risks</span>
                     </div>
                     <div class="summary-card low animate-bounce-in" style="animation-delay: 0.3s;">
                         <i class="fas fa-info-circle" style="font-size: 1.5em; color: #059669; margin-bottom: 10px;"></i>
-                        <span class="summary-number">{analysis_result['severity_counts']['low']}</span>
+                        <span class="summary-number">1</span>
                         <span class="summary-label">Low Risks</span>
                     </div>
                     <div class="summary-card animate-bounce-in" style="border-left-color: #6366f1; background: linear-gradient(135deg, #eef2ff 0%, #ddd6fe 100%); animation-delay: 0.4s;">
                         <i class="fas fa-clipboard-check" style="font-size: 1.5em; color: #6366f1; margin-bottom: 10px;"></i>
-                        <span class="summary-number">{len(analysis_result['security_issues'])}</span>
+                        <span class="summary-number">3</span>
                         <span class="summary-label">Security Checks</span>
                     </div>
                 </div>
@@ -1932,22 +1572,22 @@ def generate_html_report(analysis_result, token_parts):
                     <div class="cipher-grid">
                         <div class="cipher-detail-card">
                             <h4><i class="fas fa-signature"></i> Signature Algorithm</h4>
-                            <div class="cipher-value">{analysis_result['header'].get('alg', 'Unknown')}</div>
+                            <div class="cipher-value">none</div>
                             <div class="cipher-description">
-                                {algorithm_descriptions.get(analysis_result['header'].get('alg', ''), 'Unknown algorithm specification')}
+                                No signature verification (DANGEROUS)
                             </div>
                         </div>
                         
                         <div class="cipher-detail-card">
                             <h4><i class="fas fa-shield-alt"></i> Security Level</h4>
-                            <div class="cipher-value security-level-{analysis_result.get('algorithm_analysis', {}).get('security_level', 'unknown').lower().replace(' ', '-')}">{analysis_result.get('algorithm_analysis', {}).get('security_level', 'Unknown')}</div>
+                            <div class="cipher-value security-level-critical-risk">Critical Risk</div>
                             <div class="cipher-description">Based on current cryptographic standards and known vulnerabilities</div>
                         </div>
                         
                         <div class="cipher-detail-card">
                             <h4><i class="fas fa-calculator"></i> Hash Function</h4>
                             <div class="cipher-value">
-                                {hash_functions.get(analysis_result['header'].get('alg', ''), 'Unknown')}
+                                None
                             </div>
                             <div class="cipher-description">Cryptographic hash function used for signature generation</div>
                         </div>
@@ -1955,7 +1595,7 @@ def generate_html_report(analysis_result, token_parts):
                         <div class="cipher-detail-card">
                             <h4><i class="fas fa-key"></i> Key Type</h4>
                             <div class="cipher-value">
-                                {key_types.get(analysis_result['header'].get('alg', ''), 'Unknown')}
+                                No Key Required
                             </div>
                             <div class="cipher-description">Type of cryptographic key required for verification</div>
                         </div>
@@ -1963,29 +1603,55 @@ def generate_html_report(analysis_result, token_parts):
                     
                     <div class="vulnerability-assessment">
                         <h3><i class="fas fa-bug"></i> Cryptographic Vulnerability Assessment</h3>
-                        <div class="vuln-matrix">'''
-    
-    # Generate vulnerability matrix HTML
-    for item in analysis_result.get('vulnerability_matrix', []):
-        status_icon = {"pass": "check-circle", "fail": "times-circle", "warning": "exclamation-triangle"}
-        icon_class = status_icon.get(item.get("status", ""), "question")
-        
-        html_template += f'''
-                            <div class="vuln-item {item.get("status", "")}">
+                        <div class="vuln-matrix">
+                            <div class="vuln-item fail">
                                 <div class="vuln-header">
-                                    <i class="fas fa-{icon_class}"></i>
-                                    <span>{item.get("test", "")}</span>
+                                    <i class="fas fa-times-circle"></i>
+                                    <span>Algorithm Confusion (RS/HS256)</span>
                                 </div>
-                                <div class="vuln-description">{item.get("description", "")}</div>'''
-        
-        if "details" in item:
-            html_template += f'''
-                                <div class="vuln-details">{item["details"]}</div>'''
-        
-        html_template += '''
-                            </div>'''
-    
-    html_template += '''
+                                <div class="vuln-description">Tests if token accepts different algorithm types</div>
+                                <div class="vuln-details">Token uses "none" algorithm - critical vulnerability</div>
+                            </div>
+                            <div class="vuln-item fail">
+                                <div class="vuln-header">
+                                    <i class="fas fa-times-circle"></i>
+                                    <span>None Algorithm Attack</span>
+                                </div>
+                                <div class="vuln-description">Verifies rejection of unsigned tokens</div>
+                                <div class="vuln-details">Token accepts no signature - critical vulnerability</div>
+                            </div>
+                            <div class="vuln-item pass">
+                                <div class="vuln-header">
+                                    <i class="fas fa-check-circle"></i>
+                                    <span>Weak Secret Attack</span>
+                                </div>
+                                <div class="vuln-description">Tests for common/weak signing keys</div>
+                                <div class="vuln-details">none uses asymmetric cryptography</div>
+                            </div>
+                            <div class="vuln-item fail">
+                                <div class="vuln-header">
+                                    <i class="fas fa-times-circle"></i>
+                                    <span>Token Expiration</span>
+                                </div>
+                                <div class="vuln-description">Validates temporal security controls</div>
+                                <div class="vuln-details">No expiration claim present</div>
+                            </div>
+                            <div class="vuln-item warning">
+                                <div class="vuln-header">
+                                    <i class="fas fa-exclamation-triangle"></i>
+                                    <span>Critical Claims Validation</span>
+                                </div>
+                                <div class="vuln-description">Checks for essential security claims</div>
+                                <div class="vuln-details">Missing claims: exp, jti</div>
+                            </div>
+                            <div class="vuln-item warning">
+                                <div class="vuln-header">
+                                    <i class="fas fa-exclamation-triangle"></i>
+                                    <span>Key Management</span>
+                                </div>
+                                <div class="vuln-description">Evaluates key identification capabilities</div>
+                                <div class="vuln-details">No key identifier in header</div>
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -2047,48 +1713,82 @@ def generate_html_report(analysis_result, token_parts):
         <div class="report-card">
             <div class="card-header"><i class="fas fa-exclamation-triangle"></i> Detailed Risk Assessment</div>
             <div class="card-body">
-                <div class="risk-assessment">'''
-    
-    # Add security issues dynamically
-    for issue in analysis_result['security_issues']:
-        severity_class = issue['severity'].lower()
-        severity_icon_map = {
-            "critical": '<i class="fas fa-skull-crossbones" style="color: white;"></i>',
-            "high": '<i class="fas fa-fire" style="color: white;"></i>',
-            "medium": '<i class="fas fa-exclamation-triangle" style="color: white;"></i>',
-            "low": '<i class="fas fa-info-circle" style="color: white;"></i>'
-        }
-        severity_icon = severity_icon_map.get(severity_class, '<i class="fas fa-question" style="color: white;"></i>')
-        
-        html_template += f'''
+                <div class="risk-assessment">
                     <div class="risk-item">
-                        <div class="risk-header {severity_class}">
-                            <span><i class="fas fa-exclamation-circle"></i> {issue['title']}</span>
+                        <div class="risk-header medium">
+                            <span><i class="fas fa-exclamation-circle"></i> Missing Token Expiration (exp)</span>
                             <span class="severity-badge" style="background: linear-gradient(135deg, rgba(0,0,0,0.2) 0%, rgba(0,0,0,0.4) 100%);">
-                                {severity_icon}
-                                {issue['severity'].upper()} RISK
+                                <i class="fas fa-exclamation-triangle" style="color: white;"></i>
+                                MEDIUM RISK
                             </span>
                         </div>
                         <div class="risk-content">
                             <div class="risk-section">
                                 <div class="risk-section-title"><i class="fas fa-file-alt"></i> Risk Description</div>
-                                <div class="risk-description">{issue['description']}</div>
+                                <div class="risk-description">Token lacks expiration claim, remaining valid indefinitely</div>
                             </div>
                             
                             <div class="risk-impact">
                                 <div class="risk-section-title"><i class="fas fa-bolt"></i> Potential Impact</div>
-                                <div class="risk-description">{issue['impact']}</div>
+                                <div class="risk-description">Stolen tokens remain valid until key rotation</div>
                             </div>
                             
                             <div class="risk-mitigation">
                                 <div class="risk-section-title"><i class="fas fa-tools"></i> Recommended Mitigation</div>
-                                <div class="risk-description">{issue['mitigation']}</div>
+                                <div class="risk-description">Add exp claim with reasonable timeout (15-60 minutes)</div>
                             </div>
                         </div>
-                    </div>'''
-    
-    # Add vulnerability matrix
-    html_template += '''
+                    </div>
+                    <div class="risk-item">
+                        <div class="risk-header medium">
+                            <span><i class="fas fa-exclamation-circle"></i> Missing JWT Identifier (jti)</span>
+                            <span class="severity-badge" style="background: linear-gradient(135deg, rgba(0,0,0,0.2) 0%, rgba(0,0,0,0.4) 100%);">
+                                <i class="fas fa-exclamation-triangle" style="color: white;"></i>
+                                MEDIUM RISK
+                            </span>
+                        </div>
+                        <div class="risk-content">
+                            <div class="risk-section">
+                                <div class="risk-section-title"><i class="fas fa-file-alt"></i> Risk Description</div>
+                                <div class="risk-description">Token lacks unique identifier for revocation tracking</div>
+                            </div>
+                            
+                            <div class="risk-impact">
+                                <div class="risk-section-title"><i class="fas fa-bolt"></i> Potential Impact</div>
+                                <div class="risk-description">Cannot selectively revoke individual tokens</div>
+                            </div>
+                            
+                            <div class="risk-mitigation">
+                                <div class="risk-section-title"><i class="fas fa-tools"></i> Recommended Mitigation</div>
+                                <div class="risk-description">Add jti claim with UUID or secure random identifier</div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="risk-item">
+                        <div class="risk-header low">
+                            <span><i class="fas fa-exclamation-circle"></i> Missing Key Identifier (kid)</span>
+                            <span class="severity-badge" style="background: linear-gradient(135deg, rgba(0,0,0,0.2) 0%, rgba(0,0,0,0.4) 100%);">
+                                <i class="fas fa-info-circle" style="color: white;"></i>
+                                LOW RISK
+                            </span>
+                        </div>
+                        <div class="risk-content">
+                            <div class="risk-section">
+                                <div class="risk-section-title"><i class="fas fa-file-alt"></i> Risk Description</div>
+                                <div class="risk-description">Header lacks key identifier for key management</div>
+                            </div>
+                            
+                            <div class="risk-impact">
+                                <div class="risk-section-title"><i class="fas fa-bolt"></i> Potential Impact</div>
+                                <div class="risk-description">Complications in key rotation and multi-tenant scenarios</div>
+                            </div>
+                            
+                            <div class="risk-mitigation">
+                                <div class="risk-section-title"><i class="fas fa-tools"></i> Recommended Mitigation</div>
+                                <div class="risk-description">Add kid parameter to header for key identification</div>
+                            </div>
+                        </div>
+                    </div>
                 </div>
             </div>
         </div>
@@ -2097,30 +1797,61 @@ def generate_html_report(analysis_result, token_parts):
         <div class="report-card">
             <div class="card-header"><i class="fas fa-shield-alt"></i> Security Vulnerability Matrix</div>
             <div class="card-body">
-                <div class="vulnerability-grid">'''
-    
-    for vuln in analysis_result['vulnerability_matrix']:
-        status_class = vuln['status'].lower()
-        status_icon_map = {
-            "pass": '<i class="fas fa-check-circle" style="color: #10b981;"></i>',
-            "fail": '<i class="fas fa-times-circle" style="color: #dc2626;"></i>',
-            "warning": '<i class="fas fa-exclamation-triangle" style="color: #f59e0b;"></i>'
-        }
-        status_icon = status_icon_map.get(status_class, "❓")
-        
-        html_template += f'''
-                    <div class="vuln-item {status_class}">
+                <div class="vulnerability-grid">
+                    <div class="vuln-item fail">
                         <div class="vuln-title">
-                            {status_icon}
-                            {vuln['test']}
+                            <i class="fas fa-times-circle" style="color: #dc2626;"></i>
+                            Algorithm Confusion (RS/HS256)
                         </div>
                         <div style="color: #64748b; line-height: 1.6;">
-                            {vuln['details']}
+                            Token uses "none" algorithm - critical vulnerability
                         </div>
-                    </div>'''
-    
-    # Close the template
-    html_template += '''
+                    </div>
+                    <div class="vuln-item fail">
+                        <div class="vuln-title">
+                            <i class="fas fa-times-circle" style="color: #dc2626;"></i>
+                            None Algorithm Attack
+                        </div>
+                        <div style="color: #64748b; line-height: 1.6;">
+                            Token accepts no signature - critical vulnerability
+                        </div>
+                    </div>
+                    <div class="vuln-item pass">
+                        <div class="vuln-title">
+                            <i class="fas fa-check-circle" style="color: #10b981;"></i>
+                            Weak Secret Attack
+                        </div>
+                        <div style="color: #64748b; line-height: 1.6;">
+                            none uses asymmetric cryptography
+                        </div>
+                    </div>
+                    <div class="vuln-item fail">
+                        <div class="vuln-title">
+                            <i class="fas fa-times-circle" style="color: #dc2626;"></i>
+                            Token Expiration
+                        </div>
+                        <div style="color: #64748b; line-height: 1.6;">
+                            No expiration claim present
+                        </div>
+                    </div>
+                    <div class="vuln-item warning">
+                        <div class="vuln-title">
+                            <i class="fas fa-exclamation-triangle" style="color: #f59e0b;"></i>
+                            Critical Claims Validation
+                        </div>
+                        <div style="color: #64748b; line-height: 1.6;">
+                            Missing claims: exp, jti
+                        </div>
+                    </div>
+                    <div class="vuln-item warning">
+                        <div class="vuln-title">
+                            <i class="fas fa-exclamation-triangle" style="color: #f59e0b;"></i>
+                            Key Management
+                        </div>
+                        <div style="color: #64748b; line-height: 1.6;">
+                            No key identifier in header
+                        </div>
+                    </div>
                 </div>
             </div>
         </div>
@@ -2266,7 +1997,7 @@ def generate_html_report(analysis_result, token_parts):
         <div class="footer">
             <p><strong><i class="fas fa-certificate"></i> JWT Security Assessment & Vulnerability Analysis Report</strong></p>
             <p><i class="fas fa-code"></i> Generated by JWT Tool v2.0.0 with Enhanced ES256 Support</p>
-            <p><i class="fas fa-calendar-alt"></i> Report Date: ''' + timestamp + ''' | <i class="fas fa-microchip"></i> Analysis Engine: Advanced Security Scanner</p>
+            <p><i class="fas fa-calendar-alt"></i> Report Date: August 30, 2025 | <i class="fas fa-microchip"></i> Analysis Engine: Advanced Security Scanner</p>
             <p><i class="fas fa-link"></i> Enhanced JWT Security Analysis Tool - Enterprise Grade Security Assessment</p>
         </div>
     </div>
@@ -2441,71 +2172,4 @@ def generate_html_report(analysis_result, token_parts):
         }}, 10));
     </script>
 </body>
-</html>'''
-    
-    return html_template
-
-def main():
-    """Main execution function"""
-    import sys
-    
-    if len(sys.argv) != 2:
-        print("Usage: python jwt_security_analyzer.py <JWT_TOKEN>")
-        sys.exit(1)
-    
-    token = sys.argv[1]
-    
-    analyzer = JWTSecurityAnalyzer()
-    analysis_result = analyzer.analyze_token(token)
-    
-    # Generate HTML report
-    html_report = generate_html_report(analysis_result, analyzer.encoded_parts)
-    
-    # Save HTML report
-    with open('comprehensive_jwt_security_report.html', 'w', encoding='utf-8') as f:
-        f.write(html_report)
-    
-    print("=" * 80)
-    print("JWT SECURITY ANALYSIS REPORT")
-    print("=" * 80)
-    print(f"Analysis Date: {analysis_result['analysis_timestamp']}")
-    print(f"Token Size: {analysis_result['token_size']} characters")
-    print()
-    
-    print("SEVERITY SUMMARY:")
-    counts = analysis_result['severity_counts']
-    print(f"  Critical: {counts['critical']}")
-    print(f"  High: {counts['high']}")
-    print(f"  Medium: {counts['medium']}")
-    print(f"  Low: {counts['low']}")
-    print(f"  Info: {counts['info']}")
-    print()
-    
-    print("SECURITY ISSUES:")
-    for issue in analysis_result['security_issues']:
-        print(f"  [{issue['severity'].upper()}] {issue['title']}")
-        print(f"    Description: {issue['description']}")
-        print(f"    Impact: {issue['impact']}")
-        print(f"    Mitigation: {issue['mitigation']}")
-        if 'cvss_score' in issue:
-            print(f"    CVSS Score: {issue['cvss_score']}")
-        print()
-    
-    print("VULNERABILITY MATRIX:")
-    for vuln in analysis_result['vulnerability_matrix']:
-        status_symbol = {"pass": "✅", "fail": "❌", "warning": "⚠️"}.get(vuln['status'], "❓")
-        print(f"  {status_symbol} {vuln['test']}: {vuln['details']}")
-    print()
-    
-    print("ALGORITHM ANALYSIS:")
-    alg_analysis = analysis_result['algorithm_analysis']
-    print(f"  Algorithm: {alg_analysis['algorithm']}")
-    print(f"  Security Level: {alg_analysis['security_level']}")
-    if alg_analysis['recommendations']:
-        print("  Recommendations:")
-        for rec in alg_analysis['recommendations']:
-            print(f"    - {rec}")
-    print()
-
-if __name__ == "__main__":
-    main()
+</html>
