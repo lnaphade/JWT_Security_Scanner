@@ -9,8 +9,9 @@
 Usage:
     python apply_license_headers.py [--dry-run]
 
-- Inserts header from LICENSE_HEADER_TEMPLATE.txt at top of each target file
-  if not already present.
+- Inserts header from LICENSE_HEADER_TEMPLATE.txt below an existing shebang
+  or at file start if no shebang present.
+- Ensures the shebang (if any) remains the very first line.
 - Targets: *.py, *.sh (skips virtual envs, build, dist, .git, release)
 """
 from __future__ import annotations
@@ -40,9 +41,21 @@ def apply_header(path: Path, header: str, dry_run: bool = False) -> bool:
     except Exception as e:
         print(f"[WARN] Cannot read {path}: {e}")
         return False
-    if MARKER in original.splitlines()[:8]:
-        return False  # already has header near top
-    new_content = header + ("\n" if not original.startswith("\n") else "") + original
+    lines = original.splitlines()
+    if lines:
+        has_shebang = lines[0].startswith("#!/")
+    else:
+        has_shebang = False
+    top_region = lines[:10]
+    if any(MARKER in l for l in top_region):
+        return False  # already has header
+    # Construct new content
+    if has_shebang:
+        shebang = lines[0]
+        body = "\n".join(lines[1:])
+        new_content = shebang + "\n" + header + ("\n" if body and not body.startswith("\n") else "") + body
+    else:
+        new_content = header + ("\n" if original and not original.startswith("\n") else "") + original
     if not dry_run:
         path.write_text(new_content, encoding="utf-8")
     return True
