@@ -25,7 +25,7 @@ A comprehensive, streamlined JWT (JSON Web Token) security testing toolkit with 
 
 ### Installation
 ```bash
-git clone [https://github.com/yourusername/jwt_tool.git](https://github.com/lnaphade/JWT_Security_Scanner.git)
+git clone https://github.com/lnaphade/JWT_Security_Scanner.git
 cd jwt_tool
 pip install -r requirements.txt
 ```
