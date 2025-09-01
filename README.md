@@ -25,7 +25,7 @@ A comprehensive, streamlined JWT (JSON Web Token) security testing toolkit with 
 
 ### Installation
 ```bash
-git clone https://github.com/yourusername/jwt_tool.git
+git clone [https://github.com/yourusername/jwt_tool.git](https://github.com/lnaphade/JWT_Security_Scanner.git)
 cd jwt_tool
 pip install -r requirements.txt
 ```
@@ -153,7 +153,7 @@ Core dependencies listed in `requirements.txt`. Reproducible versions pinned in 
 ## 👤 Author
 Your Name
 - Website: https://cosmoslab.in
-- GitHub: https://github.com/lnaphade/jwt_tool
+- GitHub: https://github.com/lnaphade/JWT_Security_Scanner
 - Email: lnaphade@gmail.com
 
 ## 📄 License
